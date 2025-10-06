@@ -1,0 +1,7 @@
+{
+  "name": "stealth-town",
+  "packageManager": "yarn@4.10.3",
+  "workspaces": [
+    "packages/*"
+  ]
+}
