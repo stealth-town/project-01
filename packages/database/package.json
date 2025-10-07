@@ -6,6 +6,7 @@
     "stop": "npx supabase stop",
     "restart": "npx supabase restart",
     "status": "npx supabase status",
-    "dummy": "echo 'Dummy script'"
+    "dummy": "echo 'Dummy script'",
+    "gen-types": "npx supabase gen types typescript --local > ./supabase/supa-ts-types/database.types.ts"
   }
 }

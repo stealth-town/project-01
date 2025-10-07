@@ -5,6 +5,12 @@ __metadata:
   version: 8
   cacheKey: 10c0
 
+"database@workspace:packages/database":
+  version: 0.0.0-use.local
+  resolution: "database@workspace:packages/database"
+  languageName: unknown
+  linkType: soft
+
 "stealth-town@workspace:.":
   version: 0.0.0-use.local
   resolution: "stealth-town@workspace:."
