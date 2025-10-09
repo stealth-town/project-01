@@ -1,6 +1,7 @@
 {
   "name": "trade-engine",
   "packageManager": "yarn@4.10.3",
+  "type": "module",
   "devDependencies": {
     "@stealth-town/shared": "workspace:*",
     "@types/node": "^24.7.1",

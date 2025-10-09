@@ -1,9 +1,27 @@
 -- Trades table (Town Loop)
 -- Represents individual trade executions/positions
 
-CREATE TYPE risk_mode AS ENUM ('turtle', 'walk', 'cheetah');
-CREATE TYPE trade_state AS ENUM ('pending', 'active', 'completed', 'liquidated', 'processing');
-CREATE TYPE trade_claimed AS ENUM ('unclaimed', 'claimed', 'non_applicable');
+CREATE TYPE risk_mode AS ENUM (
+    'turtle',
+    'walk',
+    'cheetah'
+);
+
+CREATE TYPE trade_state AS ENUM (
+    'pending',
+    'active',
+    'completed',
+    'liquidated',
+    'processing',
+    'stale' -- For logging purposes
+);
+
+CREATE TYPE trade_claimed AS ENUM (
+    'unclaimed',
+    'claimed',
+    'non_applicable'
+);
+
 
 CREATE TABLE trades (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
