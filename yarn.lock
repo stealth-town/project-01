@@ -3605,6 +3605,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "trade-engine@workspace:packages/workers/trade-engine"
   dependencies:
+    "@stealth-town/shared": "workspace:*"
     "@types/node": "npm:^24.7.1"
     typescript: "npm:^5.9.3"
   languageName: unknown

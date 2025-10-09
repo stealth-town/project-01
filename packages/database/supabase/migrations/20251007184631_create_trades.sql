@@ -3,6 +3,7 @@
 
 CREATE TYPE risk_mode AS ENUM ('turtle', 'walk', 'cheetah');
 CREATE TYPE trade_state AS ENUM ('pending', 'active', 'completed', 'liquidated', 'processing');
+CREATE TYPE trade_claimed AS ENUM ('unclaimed', 'claimed', 'non_applicable');
 
 CREATE TABLE trades (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -10,6 +11,7 @@ CREATE TABLE trades (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     
     risk_mode risk_mode NOT NULL,
+    claimed trade_claimed NOT NULL DEFAULT 'unclaimed',
     state trade_state NOT NULL DEFAULT 'pending',
     
     -- Trade execution details
