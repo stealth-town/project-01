@@ -1,0 +1,8 @@
+{
+  "name": "trade-monitor",
+  "packageManager": "yarn@4.10.3",
+  "devDependencies": {
+    "@types/node": "^24.7.1",
+    "typescript": "^5.9.3"
+  }
+}

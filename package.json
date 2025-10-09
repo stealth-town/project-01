@@ -2,6 +2,11 @@
   "name": "stealth-town",
   "packageManager": "yarn@4.10.3",
   "workspaces": [
-    "packages/*"
+    "packages/app",
+    "packages/database",
+    "packages/server",
+    "packages/shelf",
+    "packages/shared",
+    "packages/workers/*"
   ]
 }
