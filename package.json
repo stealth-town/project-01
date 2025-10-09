@@ -8,5 +8,9 @@
     "packages/shelf",
     "packages/shared",
     "packages/workers/*"
-  ]
+  ],
+  "scripts": {
+    "dummy": "echo 'Dummy script'",
+    "config:dev": "scripts/config-dev.sh"
+  }
 }

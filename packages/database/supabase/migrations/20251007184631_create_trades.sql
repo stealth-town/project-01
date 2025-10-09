@@ -2,7 +2,7 @@
 -- Represents individual trade executions/positions
 
 CREATE TYPE risk_mode AS ENUM ('turtle', 'walk', 'cheetah');
-CREATE TYPE trade_state AS ENUM ('pending', 'active', 'completed', 'liquidated');
+CREATE TYPE trade_state AS ENUM ('pending', 'active', 'completed', 'liquidated', 'processing');
 
 CREATE TABLE trades (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -18,6 +18,9 @@ CREATE TABLE trades (
     
     -- Outcome tracking
     tokens_earned INTEGER DEFAULT 0,
+
+    -- Asset details
+    asset_id UUID NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
     
     -- Timing
     started_at TIMESTAMPTZ,

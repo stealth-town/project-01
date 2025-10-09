@@ -1,11 +1,37 @@
 {
-  "name": "shared",
+  "name": "@stealth-town/shared",
+  "type": "module",
+  "version": "1.0.0",
   "packageManager": "yarn@4.10.3",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./supabase": {
+      "types": "./dist/supabase/index.d.ts",
+      "import": "./dist/supabase/index.js"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "devDependencies": {
     "typescript": "^5.9.3"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.74.0",
     "dotenv": "^17.2.3"
+  },
+  "scripts": {
+    "build": "tsc",
+    "config:dev": "cp .env.dev .env",
+    "config:empty": "cp .env.template .env"
   }
 }

@@ -24,3 +24,5 @@ node_modules
 dist
 build
 
+# Env vars
+.env

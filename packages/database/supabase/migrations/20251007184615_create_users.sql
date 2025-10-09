@@ -10,8 +10,11 @@ CREATE TABLE users (
     energy_balance INTEGER NOT NULL DEFAULT 30,
     
     -- Mock balances for demo (will move to blockchain later)
-    token_balance INTEGER NOT NULL DEFAULT 0,
-    usdc_balance DECIMAL(18, 6) NOT NULL DEFAULT 0,
+    -- TODO remove
+    token_balance INTEGER NOT NULL DEFAULT 0, 
+    
+    -- TODO remove
+    usdc_balance DECIMAL(18, 6) NOT NULL DEFAULT 0, 
     
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

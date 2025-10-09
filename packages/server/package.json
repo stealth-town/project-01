@@ -9,11 +9,11 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@stealth-town/shared": "workspace:*",
     "@supabase/supabase-js": "^2.74.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
-    "express": "^5.1.0",
-    "shared": "workspace:*"
+    "express": "^5.1.0"
   },
   "scripts": {
     "start": "tsx src/index.ts",

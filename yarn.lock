@@ -794,6 +794,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@stealth-town/shared@workspace:*, @stealth-town/shared@workspace:packages/shared":
+  version: 0.0.0-use.local
+  resolution: "@stealth-town/shared@workspace:packages/shared"
+  dependencies:
+    "@supabase/supabase-js": "npm:^2.74.0"
+    dotenv: "npm:^17.2.3"
+    typescript: "npm:^5.9.3"
+  languageName: unknown
+  linkType: soft
+
 "@supabase/auth-js@npm:2.74.0":
   version: 2.74.0
   resolution: "@supabase/auth-js@npm:2.74.0"
@@ -1323,6 +1333,7 @@ __metadata:
   resolution: "app@workspace:packages/app"
   dependencies:
     "@eslint/js": "npm:^9.36.0"
+    "@stealth-town/shared": "workspace:*"
     "@types/node": "npm:^24.6.0"
     "@types/react": "npm:^19.1.16"
     "@types/react-dom": "npm:^19.1.9"
@@ -3333,6 +3344,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "server@workspace:packages/server"
   dependencies:
+    "@stealth-town/shared": "workspace:*"
     "@supabase/supabase-js": "npm:^2.74.0"
     "@types/cors": "npm:^2.8.19"
     "@types/express": "npm:^5.0.3"
@@ -3340,7 +3352,6 @@ __metadata:
     cors: "npm:^2.8.5"
     dotenv: "npm:^17.2.3"
     express: "npm:^5.1.0"
-    shared: "workspace:*"
     tsx: "npm:^4.20.6"
     typescript: "npm:^5.9.3"
   languageName: unknown
@@ -3352,16 +3363,6 @@ __metadata:
   checksum: 10c0/68733173026766fa0d9ecaeb07f0483f4c2dc70ca376b3b7c40b7cda909f94b0918f6c5ad5ce27a9160bdfb475efaa9d5e705a11d8eaae18f9835d20976028bc
   languageName: node
   linkType: hard
-
-"shared@workspace:*, shared@workspace:packages/shared":
-  version: 0.0.0-use.local
-  resolution: "shared@workspace:packages/shared"
-  dependencies:
-    "@supabase/supabase-js": "npm:^2.74.0"
-    dotenv: "npm:^17.2.3"
-    typescript: "npm:^5.9.3"
-  languageName: unknown
-  linkType: soft
 
 "shebang-command@npm:^2.0.0":
   version: 2.0.0
@@ -3600,9 +3601,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"trade-monitor@workspace:packages/workers/trade-monitor":
+"trade-engine@workspace:packages/workers/trade-engine":
   version: 0.0.0-use.local
-  resolution: "trade-monitor@workspace:packages/workers/trade-monitor"
+  resolution: "trade-engine@workspace:packages/workers/trade-engine"
   dependencies:
     "@types/node": "npm:^24.7.1"
     typescript: "npm:^5.9.3"
