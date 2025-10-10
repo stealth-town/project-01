@@ -1,6 +1,2 @@
-import { DummyService } from './dummy/DummyService.js';
-
-
-export { 
-    DummyService
-};
+export * from './town/TownService.js';
+export * from './price/PriceService.js';

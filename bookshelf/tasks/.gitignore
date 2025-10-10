@@ -1,0 +1,3 @@
+# Ignore the mvp tasks
+# MVP/*.md
+!MVP

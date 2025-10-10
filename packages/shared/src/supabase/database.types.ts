@@ -61,37 +61,79 @@ export type Database = {
         }
         Relationships: []
       }
+      building_purchases: {
+        Row: {
+          building_id: string
+          created_at: string
+          id: string
+          slot_number: number
+          usdc_cost: number
+          user_id: string
+        }
+        Insert: {
+          building_id: string
+          created_at?: string
+          id?: string
+          slot_number: number
+          usdc_cost?: number
+          user_id: string
+        }
+        Update: {
+          building_id?: string
+          created_at?: string
+          id?: string
+          slot_number?: number
+          usdc_cost?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "building_purchases_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "building_purchases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       buildings: {
         Row: {
           created_at: string
           id: string
-          is_unlocked: boolean
           slot_number: number
-          town_id: string
+          status: Database["public"]["Enums"]["building_status"]
           updated_at: string
+          user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
-          is_unlocked?: boolean
           slot_number: number
-          town_id: string
+          status?: Database["public"]["Enums"]["building_status"]
           updated_at?: string
+          user_id: string
         }
         Update: {
           created_at?: string
           id?: string
-          is_unlocked?: boolean
           slot_number?: number
-          town_id?: string
+          status?: Database["public"]["Enums"]["building_status"]
           updated_at?: string
+          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "buildings_town_id_fkey"
-            columns: ["town_id"]
+            foreignKeyName: "buildings_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "towns"
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -185,6 +227,41 @@ export type Database = {
           },
         ]
       }
+      energy_purchases: {
+        Row: {
+          created_at: string
+          energy_amount: number
+          id: string
+          package_type: Database["public"]["Enums"]["energy_package"]
+          usdc_cost: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          energy_amount: number
+          id?: string
+          package_type: Database["public"]["Enums"]["energy_package"]
+          usdc_cost: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          energy_amount?: number
+          id?: string
+          package_type?: Database["public"]["Enums"]["energy_package"]
+          usdc_cost?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "energy_purchases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       items: {
         Row: {
           character_id: string
@@ -265,45 +342,57 @@ export type Database = {
         Row: {
           asset_id: string
           building_id: string
+          claimed: Database["public"]["Enums"]["trade_claimed"]
           completed_at: string | null
+          completion_time: string | null
           created_at: string
+          energy_spent: number
           entry_price: number | null
           id: string
-          liquidation_threshold: number | null
+          liquidation_price: number | null
+          resolved_at: string | null
           risk_mode: Database["public"]["Enums"]["risk_mode"]
           started_at: string | null
-          state: Database["public"]["Enums"]["trade_state"]
-          tokens_earned: number | null
+          status: Database["public"]["Enums"]["trade_state"]
+          tokens_reward: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
           asset_id: string
           building_id: string
+          claimed?: Database["public"]["Enums"]["trade_claimed"]
           completed_at?: string | null
+          completion_time?: string | null
           created_at?: string
+          energy_spent?: number
           entry_price?: number | null
           id?: string
-          liquidation_threshold?: number | null
+          liquidation_price?: number | null
+          resolved_at?: string | null
           risk_mode: Database["public"]["Enums"]["risk_mode"]
           started_at?: string | null
-          state?: Database["public"]["Enums"]["trade_state"]
-          tokens_earned?: number | null
+          status?: Database["public"]["Enums"]["trade_state"]
+          tokens_reward?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
           asset_id?: string
           building_id?: string
+          claimed?: Database["public"]["Enums"]["trade_claimed"]
           completed_at?: string | null
+          completion_time?: string | null
           created_at?: string
+          energy_spent?: number
           entry_price?: number | null
           id?: string
-          liquidation_threshold?: number | null
+          liquidation_price?: number | null
+          resolved_at?: string | null
           risk_mode?: Database["public"]["Enums"]["risk_mode"]
           started_at?: string | null
-          state?: Database["public"]["Enums"]["trade_state"]
-          tokens_earned?: number | null
+          status?: Database["public"]["Enums"]["trade_state"]
+          tokens_reward?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -334,27 +423,30 @@ export type Database = {
       users: {
         Row: {
           created_at: string
-          energy_balance: number
+          energy: number
           id: string
-          token_balance: number
+          tokens: number
+          town_level: number
           updated_at: string
-          usdc_balance: number
+          usdc: number
         }
         Insert: {
           created_at?: string
-          energy_balance?: number
+          energy?: number
           id?: string
-          token_balance?: number
+          tokens?: number
+          town_level?: number
           updated_at?: string
-          usdc_balance?: number
+          usdc?: number
         }
         Update: {
           created_at?: string
-          energy_balance?: number
+          energy?: number
           id?: string
-          token_balance?: number
+          tokens?: number
+          town_level?: number
           updated_at?: string
-          usdc_balance?: number
+          usdc?: number
         }
         Relationships: []
       }
@@ -366,6 +458,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      building_status: "idle" | "active" | "completed" | "liquidated"
+      energy_package: "small" | "medium" | "large"
       item_type:
         | "weapon"
         | "armor"
@@ -374,12 +468,14 @@ export type Database = {
         | "boots"
         | "gloves"
       risk_mode: "turtle" | "walk" | "cheetah"
+      trade_claimed: "unclaimed" | "claimed" | "non_applicable"
       trade_state:
         | "pending"
         | "active"
         | "completed"
         | "liquidated"
         | "processing"
+        | "stale"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -510,14 +606,18 @@ export const Constants = {
   },
   public: {
     Enums: {
+      building_status: ["idle", "active", "completed", "liquidated"],
+      energy_package: ["small", "medium", "large"],
       item_type: ["weapon", "armor", "accessory", "helmet", "boots", "gloves"],
       risk_mode: ["turtle", "walk", "cheetah"],
+      trade_claimed: ["unclaimed", "claimed", "non_applicable"],
       trade_state: [
         "pending",
         "active",
         "completed",
         "liquidated",
         "processing",
+        "stale",
       ],
     },
   },

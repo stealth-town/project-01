@@ -1,93 +1,115 @@
-/**
- * TradeMonitor - Listens for trade events and triggers callbacks
- * 
- * This class will eventually connect to Supabase Realtime or polling mechanism
- * For now, it's a dummy implementation that simulates trade events
- */
+import { type Trade } from '@stealth-town/shared/types';
+import { TradeSubscription } from '../subscriptions/TradeSubscription.js';
+import { TradeRepo } from '../repos/TradeRepo.js';
 
-export type Trade = {
-    id: string;
-    userId: string;
-    buildingId: string;
-    assetId: string;
-    riskMode: 'turtle' | 'walk' | 'cheetah';
-    state: 'pending' | 'active' | 'completed' | 'liquidated';
-    startedAt?: string;
-};
+/**
+ * TradeMonitor - Listens for trade events via realtime and polling
+ *
+ * Uses two mechanisms:
+ * 1. Supabase Realtime - for instant new trade notifications
+ * 2. Polling - for checking existing active trades (fallback + resolution checks)
+ */
 
 export type TradeTriggerCallback = (trade: Trade) => Promise<void>;
 
 export class TradeMonitor {
     private callback: TradeTriggerCallback;
     private isRunning: boolean = false;
-    private simulationInterval?: NodeJS.Timeout;
+    private subscription: TradeSubscription;
+    private tradeRepo: TradeRepo;
+    private pollingInterval?: NodeJS.Timeout;
+    private pollingIntervalMs: number = 10000; // Poll every 10 seconds
+    private processedTrades: Set<string> = new Set(); // Track processed trades
 
-    constructor(callback: TradeTriggerCallback) {
+    constructor(callback: TradeTriggerCallback, tradeRepo: TradeRepo) {
         this.callback = callback;
+        this.tradeRepo = tradeRepo;
+        this.subscription = new TradeSubscription();
     }
 
     /**
      * Start monitoring for trades
-     * In real implementation, this would:
-     * - Subscribe to Supabase Realtime
-     * - Or poll the database for new trades
+     * Sets up realtime subscriptions and polling
      */
-    start() {
+    async start() {
         console.log('🔍 TradeMonitor started');
         this.isRunning = true;
 
-        // Dummy implementation: simulate a new trade every 15 seconds
-        this.simulationInterval = setInterval(() => {
-            this.simulateNewTrade();
-        }, 15000);
+        // Subscribe to realtime trade events
+        await this.subscription.subscribe();
+        this.subscription.onTrade((trade) => this.handleTrade(trade));
 
-        // Also simulate one immediately for testing
-        setTimeout(() => this.simulateNewTrade(), 2000);
+        // Start polling for active trades
+        this.startPolling();
+
+        // Initial poll to catch any existing trades
+        await this.pollActiveTrades();
     }
 
     /**
      * Stop monitoring
      */
-    stop() {
+    async stop() {
         console.log('🛑 TradeMonitor stopped');
         this.isRunning = false;
-        if (this.simulationInterval) {
-            clearInterval(this.simulationInterval);
+
+        await this.subscription.unsubscribe();
+
+        if (this.pollingInterval) {
+            clearInterval(this.pollingInterval);
+        }
+
+        this.processedTrades.clear();
+    }
+
+    /**
+     * Start polling for active trades
+     */
+    private startPolling() {
+        this.pollingInterval = setInterval(async () => {
+            if (this.isRunning) {
+                await this.pollActiveTrades();
+            }
+        }, this.pollingIntervalMs);
+    }
+
+    /**
+     * Poll database for active trades
+     */
+    private async pollActiveTrades() {
+        try {
+            const activeTrades = await this.tradeRepo.getAllActiveTrades();
+
+            for (const trade of activeTrades) {
+                // Always process active trades for resolution checks
+                await this.handleTrade(trade);
+            }
+
+            // Clean up processed trades that are no longer active
+            const activeTradeIds = new Set(activeTrades.map(t => t.id));
+            for (const tradeId of this.processedTrades) {
+                if (!activeTradeIds.has(tradeId)) {
+                    this.processedTrades.delete(tradeId);
+                }
+            }
+        } catch (error) {
+            console.error('❌ Error polling active trades:', error);
         }
     }
 
     /**
-     * Simulate a new trade being created
-     * In real implementation, this would be triggered by DB events
+     * Handle a trade (from realtime or polling)
      */
-    private async simulateNewTrade() {
+    private async handleTrade(trade: Trade) {
         if (!this.isRunning) return;
 
-        const dummyTrade: Trade = {
-            id: this.generateId(),
-            userId: this.generateId(),
-            buildingId: this.generateId(),
-            assetId: this.generateId(),
-            riskMode: this.randomRiskMode(),
-            state: 'active',
-            startedAt: new Date().toISOString()
-        };
-
-        console.log('📢 New trade detected:', dummyTrade.id);
+        console.log(`📢 Processing trade: ${trade.id}`);
 
         try {
-            await this.callback(dummyTrade);
+            await this.callback(trade);
+            this.processedTrades.add(trade.id);
         } catch (error) {
-            console.error('❌ Error in trade callback:', error);
+            console.error(`❌ Error processing trade ${trade.id}:`, error);
         }
-    }
-
-    private generateId(): string {
-        return Math.random().toString(36).substring(2, 15);
-    }
-
-    private randomRiskMode(): 'turtle' | 'walk' | 'cheetah' {
-        const modes = ['turtle', 'walk', 'cheetah'] as const;
-        return modes[Math.floor(Math.random() * modes.length)] as 'turtle' | 'walk' | 'cheetah';
     }
 }

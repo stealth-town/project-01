@@ -1,30 +1,9 @@
-import type { Trade } from './TradeMonitor.js';
-
-/**
- * Interface that all trade resolvers must implement
- * This allows us to swap between mock and real implementations
- */
-export interface ITradeResolver {
-  /**
-   * Resolve a trade and return the outcome
-   */
-  resolve(trade: Trade): Promise<TradeOutcome>;
-  
-  /**
-   * Get the name of this resolver (for logging)
-   */
-  getName(): string;
-}
-
-/**
- * Result of a trade resolution
- */
-export type TradeOutcome = {
-  tradeId: string;
-  state: 'completed' | 'liquidated';
-  tokensEarned: number;
-  completedAt: string;
-};
+import { type Trade } from '@stealth-town/shared/types';
+import { type ITradeResolver, type TradeResolution } from '../resolvers/RealTradeResolver.js';
+import { TradeRepo } from '../repos/TradeRepo.js';
+import { BuildingRepo } from '../repos/BuildingRepo.js';
+import { UserRepo } from '../repos/UserRepo.js';
+import { BuildingStatus } from '@stealth-town/shared/types';
 
 /**
  * Wrapper that manages the current resolver implementation
@@ -32,31 +11,42 @@ export type TradeOutcome = {
  */
 export class TradeResolverWrapper {
   private resolver: ITradeResolver;
+  private tradeRepo: TradeRepo;
+  private buildingRepo: BuildingRepo;
+  private userRepo: UserRepo;
 
-  constructor(resolver: ITradeResolver) {
+  constructor(
+    resolver: ITradeResolver,
+    tradeRepo: TradeRepo,
+    buildingRepo: BuildingRepo,
+    userRepo: UserRepo
+  ) {
     this.resolver = resolver;
-    console.log(`📦 TradeResolverWrapper initialized with: ${resolver.getName()}`);
+    this.tradeRepo = tradeRepo;
+    this.buildingRepo = buildingRepo;
+    this.userRepo = userRepo;
+    console.log(`📦 TradeResolverWrapper initialized`);
   }
 
   /**
    * Resolve a trade using the current resolver
    */
   async resolve(trade: Trade): Promise<void> {
-    console.log(`⚙️  Resolving trade ${trade.id} using ${this.resolver.getName()}`);
-    
+    console.log(`⚙️  Resolving trade ${trade.id}`);
+
     try {
-      const outcome = await this.resolver.resolve(trade);
-      
-      // Here we would update the database with the outcome
-      // For now, just log it
-      console.log(`✅ Trade ${outcome.tradeId} resolved:`, {
-        state: outcome.state,
-        tokensEarned: outcome.tokensEarned
-      });
-      
-      // TODO: Update database with outcome
-      // await this.updateDatabase(outcome);
-      
+      const resolution = await this.resolver.resolve(trade);
+
+      // Only process if trade status changed
+      if (!resolution || resolution.status === 'active') {
+        return;
+      }
+
+      console.log(`✅ Trade ${resolution.tradeId} resolved: ${resolution.status}`);
+
+      // Update database based on resolution
+      await this.updateDatabase(trade, resolution);
+
     } catch (error) {
       console.error(`❌ Failed to resolve trade ${trade.id}:`, error);
       throw error;
@@ -64,26 +54,36 @@ export class TradeResolverWrapper {
   }
 
   /**
-   * Swap to a different resolver implementation
+   * Update database with trade resolution
    */
-  setResolver(resolver: ITradeResolver) {
-    console.log(`🔄 Switching resolver from ${this.resolver.getName()} to ${resolver.getName()}`);
-    this.resolver = resolver;
-  }
+  private async updateDatabase(trade: Trade, resolution: TradeResolution): Promise<void> {
+    try {
+      if (resolution.status === 'completed') {
+        // Update trade as completed
+        await this.tradeRepo.resolveCompletion(
+          resolution.tradeId,
+          resolution.tokensReward || 0
+        );
 
-  /**
-   * Get current resolver name
-   */
-  getCurrentResolverName(): string {
-    return this.resolver.getName();
-  }
+        // Add tokens to user balance
+        if (resolution.tokensReward && resolution.tokensReward > 0) {
+          await this.userRepo.addTokens(trade.userId, resolution.tokensReward);
+          console.log(`💰 Added ${resolution.tokensReward} tokens to user ${trade.userId}`);
+        }
 
-  /**
-   * Update database with trade outcome
-   * TODO: Implement when repository is ready
-   */
-  private async updateDatabase(outcome: TradeOutcome): Promise<void> {
-    // This will use the shared repository when implemented
-    console.log('💾 Would update database with:', outcome);
+      } else if (resolution.status === 'liquidated') {
+        // Update trade as liquidated
+        await this.tradeRepo.resolveLiquidation(resolution.tradeId);
+        console.log(`💥 Trade ${resolution.tradeId} liquidated`);
+      }
+
+      // Update building status back to idle
+      await this.buildingRepo.updateBuildingStatus(trade.buildingId, BuildingStatus.IDLE);
+      console.log(`🏢 Building ${trade.buildingId} set to idle`);
+
+    } catch (error) {
+      console.error(`❌ Failed to update database for trade ${trade.id}:`, error);
+      throw error;
+    }
   }
 }
