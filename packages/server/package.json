@@ -3,15 +3,18 @@
   "packageManager": "yarn@4.10.3",
   "type": "module",
   "devDependencies": {
+    "@types/chai": "^5.2.2",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/node": "^24.7.0",
+    "mocha": "^11.7.4",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"
   },
   "dependencies": {
     "@stealth-town/shared": "workspace:*",
     "@supabase/supabase-js": "^2.74.0",
+    "chai": "^6.2.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0"
@@ -19,6 +22,7 @@
   "scripts": {
     "start": "tsx src/index.ts",
     "dev": "tsx src/index.ts --watch",
-    "build": "tsc"
+    "build": "tsc",
+    "test": "mocha src/tests/*.test.ts"
   }
 }

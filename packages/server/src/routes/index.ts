@@ -1,6 +1,8 @@
-import { Router } from 'express';
-import authRoutes from './auth.routes.js';
-import townRoutes from './town.routes.js';
+import { Router } from "express";
+import authRoutes from "./auth.routes.js";
+import townRoutes from "./town.routes.js";
+import itemRoutes from "./item.routes.js";
+import characterRoutes from "./character.routes.js";
 
 /**
  * Main router file
@@ -10,13 +12,18 @@ import townRoutes from './town.routes.js';
 const router = Router();
 
 // Auth routes (register/login workaround)
-router.use('/auth', authRoutes);
+router.use("/auth", authRoutes);
 
 // Town routes (energy, buildings, trades)
-router.use('/town', townRoutes);
+router.use("/town", townRoutes);
+
+// Item routes (CRUD operations for character items)
+router.use("/items", itemRoutes);
+
+// Character routes (character generation and management)
+router.use("/characters", characterRoutes);
 
 // Future routes
-// router.use('/character', characterRoutes);
 // router.use('/dungeon', dungeonRoutes);
 
 export default router;
