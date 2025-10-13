@@ -1896,6 +1896,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"dungeon-runtime@workspace:packages/workers/dungeon-runtime":
+  version: 0.0.0-use.local
+  resolution: "dungeon-runtime@workspace:packages/workers/dungeon-runtime"
+  dependencies:
+    "@stealth-town/shared": "workspace:*"
+    "@types/node": "npm:^24.7.1"
+    typescript: "npm:^5.9.3"
+  languageName: unknown
+  linkType: soft
+
 "eastasianwidth@npm:^0.2.0":
   version: 0.2.0
   resolution: "eastasianwidth@npm:0.2.0"

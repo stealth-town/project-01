@@ -1,0 +1,15 @@
+{
+  "name": "dungeon-runtime",
+  "packageManager": "yarn@4.10.3",
+  "type": "module",
+  "devDependencies": {
+    "@stealth-town/shared": "workspace:*",
+    "@types/node": "^24.7.1",
+    "typescript": "^5.9.3"
+  },
+  "scripts": {
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts --watch",
+    "build": "tsc"
+  }
+}

@@ -3,6 +3,7 @@ import authRoutes from "./auth.routes.js";
 import townRoutes from "./town.routes.js";
 import itemRoutes from "./item.routes.js";
 import characterRoutes from "./character.routes.js";
+import dungeonRoutes from "./dungeon.routes.js";
 
 /**
  * Main router file
@@ -23,7 +24,7 @@ router.use("/items", itemRoutes);
 // Character routes (character generation and management)
 router.use("/characters", characterRoutes);
 
-// Future routes
-// router.use('/dungeon', dungeonRoutes);
+// Dungeon routes (dungeon runs and rewards)
+router.use("/dungeon", dungeonRoutes);
 
 export default router;
