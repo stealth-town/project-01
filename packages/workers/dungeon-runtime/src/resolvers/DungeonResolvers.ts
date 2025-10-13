@@ -1,16 +1,16 @@
-import { CharacterRepo } from "../repos/CharacterRepo";
-import { DungeonRunsRepo } from "../repos/DungeonRunsRepo";
+import { CharacterRepo } from "../repos/CharacterRepo.js";
+import { DungeonRunsRepo } from "../repos/DungeonRunsRepo.js";
 
 export class DungeonResolver {
     private timeElapse: number;
-    private rewardPercentage: number;
+    private rewardMultiplier: number;
     private dungeonRunsRepo: DungeonRunsRepo;
     private characterRepo: CharacterRepo;
 
     constructor() {
         this.dungeonRunsRepo = new DungeonRunsRepo();
         this.timeElapse = parseInt(process.env.TIME_ELAPSE || '10000');
-        this.rewardPercentage = parseFloat(process.env.REWARD_PERCENTAGE || '0.05');
+        this.rewardMultiplier = parseFloat(process.env.REWARD_MULTIPLIER || '1');
         this.characterRepo = new CharacterRepo();
     }
 
@@ -23,15 +23,19 @@ export class DungeonResolver {
             const expiredTime = new Date(startedAt.getTime() + this.timeElapse);
 
             if (startedAt && expiredTime < timeNow) {
-                await this.dungeonRunsRepo.finish(dungeonRun.id, dungeonRun.starting_damage_rating * this.rewardPercentage);
+                // finish the dungeon run
+                await this.dungeonRunsRepo.finish(dungeonRun.id, dungeonRun.starting_damage_rating * this.rewardMultiplier);
+                console.log("finished dungeon run", dungeonRun.id);
                 const character = await this.characterRepo.findById(dungeonRun.character_id);
-                await this.dungeonRunsRepo.create({
-                    character_id: dungeonRun.character_id,
-                    user_id: dungeonRun.user_id,
-                    duration_seconds: this.timeElapse,
-                    starting_damage_rating: character.damage_rating,
-                    started_at: expiredTime.toUTCString(),
-                });
+                if (character && character.damage_rating > 0) {
+                    await this.dungeonRunsRepo.create({
+                        character_id: dungeonRun.character_id,
+                        user_id: dungeonRun.user_id,
+                        duration_seconds: this.timeElapse / 1000,
+                        starting_damage_rating: character.damage_rating,
+                        started_at: expiredTime.toUTCString(),
+                    });
+                }
             }
         }));
     }

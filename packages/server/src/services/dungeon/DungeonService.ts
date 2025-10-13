@@ -1,4 +1,4 @@
-import type { CharacterId, DungeonRunId, UserId } from "@stealth-town/shared/types";
+import type { Character, CharacterId, DungeonRunId, UserId } from "@stealth-town/shared/types";
 import { UserRepo } from "../../repos/UserRepo.js";
 import { CharacterRepo } from "../../repos/CharacterRepo.js";
 import { DungeonRunsRepo, type DungeonRun } from "../../repos/DungeonRunsRepo.js";
@@ -140,6 +140,26 @@ export class DungeonService {
         }
 
         return await this.dungeonRunsRepo.findByCharacterId(characterId);
+    }
+
+    async createDungeonRunIfNeeded(characterId: CharacterId) {
+        const character = await this.characterRepo.findById(characterId);
+        if (!character) {
+            throw new Error("Character not found");
+        }
+
+        const runs = await this.dungeonRunsRepo.findByCharacterId(characterId);
+        if (runs.length > 0) {
+            return;
+        }
+
+        await this.dungeonRunsRepo.create({
+            character_id: characterId,
+            user_id: character.user_id,
+            started_at: new Date().toISOString(),
+            duration_seconds: 10, // needs to be moved to env
+            starting_damage_rating: character.damage_rating,
+        });
     }
 }
 

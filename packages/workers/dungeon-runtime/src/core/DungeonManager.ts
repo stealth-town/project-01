@@ -1,4 +1,4 @@
-import { DungeonResolver } from "../resolvers/DungeonResolvers";
+import { DungeonResolver } from "../resolvers/DungeonResolvers.js";
 
 export class DungeonManager {
     private pollingInterval: number;

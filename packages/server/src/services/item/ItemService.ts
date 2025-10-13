@@ -1,6 +1,7 @@
 import type { ItemId, CharacterId, ItemType } from "@stealth-town/shared/types";
 import { ItemRepo, type ItemData } from "../../repos/ItemRepo.js";
 import { CharacterService } from "../character/CharacterService.js";
+import { DungeonService } from "../dungeon/DungeonService.js";
 
 export interface EquipItemRequest {
   itemId: ItemId;
@@ -10,10 +11,12 @@ export interface EquipItemRequest {
 export class ItemService {
   private itemRepo: ItemRepo;
   private characterService: CharacterService;
+  private dungeonService: DungeonService;
 
   constructor() {
     this.itemRepo = new ItemRepo();
     this.characterService = new CharacterService();
+    this.dungeonService = new DungeonService();
   }
 
   /**
@@ -97,6 +100,7 @@ export class ItemService {
 
     // Update the character's damage rating
     await this.characterService.updateDamageRating(item.character_id, item.damage_contribution);
+    await this.dungeonService.createDungeonRunIfNeeded(item.character_id);
 
     return await this.itemRepo.equip(itemId, slot);
   }

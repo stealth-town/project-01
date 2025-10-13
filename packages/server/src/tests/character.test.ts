@@ -75,4 +75,54 @@ describe("Character", () => {
         const characterData = await res2.json();
         expect(characterData.character.damage_rating).to.be.eq(0);
     });
+
+    it("should find dungeon run for user", async () => {
+        const res = await fetch(`${apiUrl}/dungeon/character/${characterId}/runs`, {
+            method: "GET",
+        });
+        expect(res.status).to.be.lt(300);
+        const runs = await res.json();
+        expect(runs.runs.length).to.be.greaterThan(0);
+
+        const run = runs.runs[0];
+        const endAt = new Date(new Date(run.started_at).getTime() + run.duration_seconds * 1000);
+        console.log("endAt", endAt);
+        await delay(endAt.getTime() - Date.now());
+
+        for (let i = 0; i < 10; i++) {
+            const res2 = await fetch(`${apiUrl}/dungeon/character/${characterId}/unclaimed`, {
+                method: "GET",
+            });
+            if ((await res2.json()).runs.length > 0) {
+                break;
+            }
+
+            await delay(1000);
+        }
+
+        console.log("unclaimed runs");
+        const res2 = await fetch(`${apiUrl}/dungeon/character/${characterId}/unclaimed`, {
+            method: "GET",
+        });
+        expect(res2.status).to.be.lt(300);
+        const unclaimedRuns = await res2.json();
+        expect(unclaimedRuns.runs.length).to.be.greaterThan(0);
+
+        const res3 = await callPostOnApi(`${apiUrl}/dungeon/claim`, {
+            dungeonRunId: unclaimedRuns.runs[0].id,
+            userId,
+        });
+        expect(res.status).to.be.lt(300);
+
+        const res4 = await fetch(`${apiUrl}/dungeon/character/${characterId}/unclaimed`, {
+            method: "GET",
+        });
+        expect(res4.status).to.be.lt(300);
+        const unclaimedRuns1 = await res4.json();
+        expect(unclaimedRuns1.runs.length).to.be.eq(0);
+    });
 });
+
+function delay(arg0: number) {
+    return new Promise(resolve => setTimeout(resolve, arg0));
+}

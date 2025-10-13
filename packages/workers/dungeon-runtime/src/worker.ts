@@ -1,7 +1,7 @@
 import { parentPort, workerData } from 'worker_threads';
-import { DungeonRunsRepo } from './repos/DungeonRunsRepo';
-import { CharacterRepo } from './repos/CharacterRepo';
-import { DungeonManager } from './core/DungeonManager';
+import { DungeonRunsRepo } from './repos/DungeonRunsRepo.js';
+import { CharacterRepo } from './repos/CharacterRepo.js';
+import { DungeonManager } from './core/DungeonManager.js';
 
 
 const { workerId } = workerData;
