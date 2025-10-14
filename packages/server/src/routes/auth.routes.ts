@@ -6,32 +6,21 @@ const userRepo = new UserRepo();
 
 /**
  * POST /api/auth/register
- * Register a new user or fetch existing user by ID
+ * Create a new user with a random username
+ * Returns the user ID that can be used to login later
  */
 router.post('/register', async (req: Request, res: Response) => {
   try {
-    const { userId } = req.body;
+    // Create new user with default balances (30 energy, 0 tokens, 10 USDC for testing)
+    const user = await userRepo.create();
 
-    let user;
-
-    if (userId) {
-      // Try to fetch existing user
-      try {
-        user = await userRepo.findById(userId);
-      } catch (error) {
-        return res.status(404).json({
-          error: 'User not found',
-          message: 'No user exists with this ID'
-        });
-      }
-    } else {
-      // Create new user with default balances
-      user = await userRepo.create();
-    }
+    // Generate a simple username from the ID
+    const username = `player_${user.id.substring(0, 8)}`;
 
     res.json({
-      user,
-      message: userId ? 'User found' : 'User created'
+      userId: user.id,
+      username,
+      message: 'User created successfully. Save this User ID to login later!'
     });
   } catch (error: any) {
     console.error('Register error:', error);
@@ -44,7 +33,7 @@ router.post('/register', async (req: Request, res: Response) => {
 
 /**
  * POST /api/auth/login
- * Login with existing user ID
+ * Login with existing user ID (paste from database)
  */
 router.post('/login', async (req: Request, res: Response) => {
   try {
@@ -62,12 +51,18 @@ router.post('/login', async (req: Request, res: Response) => {
     if (!user) {
       return res.status(404).json({
         error: 'User not found',
-        message: 'No user exists with this ID'
+        message: 'No user exists with this ID. Please check the ID or register a new user.'
       });
     }
 
+    // Generate username from ID for display
+    const username = `player_${user.id.substring(0, 8)}`;
+
     res.json({
-      user,
+      user: {
+        id: user.id,
+        username
+      },
       message: 'Login successful'
     });
   } catch (error: any) {

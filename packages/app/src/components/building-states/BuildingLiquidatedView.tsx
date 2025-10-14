@@ -70,9 +70,9 @@ export function BuildingLiquidatedView({ building, onUpdate }: BuildingLiquidate
       </div>
 
       <div className="liquidation-details">
-        <div className="detail-row loss">
-          <span className="detail-label">Tokens Lost</span>
-          <span className="detail-value">0 🎁</span>
+        <div className="detail-row consolation">
+          <span className="detail-label">Consolation Tokens</span>
+          <span className="detail-value">100 🎁</span>
         </div>
         <div className="detail-row loss">
           <span className="detail-label">Energy Lost</span>
@@ -108,7 +108,7 @@ export function BuildingLiquidatedView({ building, onUpdate }: BuildingLiquidate
         disabled={isLoading}
         className="acknowledge-button"
       >
-        {isLoading ? 'Processing...' : 'OK, Got It'}
+        {isLoading ? 'Claiming...' : 'Claim Consolation (100 Tokens)'}
       </button>
     </div>
   );

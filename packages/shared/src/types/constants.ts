@@ -21,29 +21,29 @@ export const MAX_BUILDINGS = 3;
 
 /**
  * Risk Mode Configuration
- * - energyCost: Energy required to start trade
+ * - energyCost: Energy required to start trade (now uniform at 1)
  * - duration: Trade duration in seconds
- * - liquidationThreshold: Price drop percentage that triggers liquidation (0.05 = 5%)
- * - tokensReward: Tokens rewarded on successful completion
+ * - liquidationThreshold: Price drop percentage that triggers liquidation (0.005 = 0.5%)
+ * - tokensReward: Tokens rewarded on successful completion (now uniform at 100)
  */
 export const RISK_MODE_CONFIG = {
   [RiskMode.TURTLE]: {
-    energyCost: 5,
-    duration: 300, // 5 minutes
-    liquidationThreshold: 0.05, // 5% drop
-    tokensReward: 50
+    energyCost: 1,
+    duration: 120, // 120 seconds (2 minutes)
+    liquidationThreshold: 0.005, // 0.5% drop
+    tokensReward: 100
   },
   [RiskMode.WALK]: {
-    energyCost: 10,
-    duration: 180, // 3 minutes
-    liquidationThreshold: 0.10, // 10% drop
-    tokensReward: 120
+    energyCost: 1,
+    duration: 45, // 45 seconds
+    liquidationThreshold: 0.001, // 0.1% drop
+    tokensReward: 100
   },
   [RiskMode.CHEETAH]: {
-    energyCost: 20,
-    duration: 120, // 2 minutes
-    liquidationThreshold: 0.15, // 15% drop
-    tokensReward: 250
+    energyCost: 1,
+    duration: 10, // 10 seconds
+    liquidationThreshold: 0.0001, // 0.01% drop
+    tokensReward: 100
   }
 } as const;
 

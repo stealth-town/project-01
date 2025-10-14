@@ -10,7 +10,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (userId: string) => Promise<void>;
-  register: (username: string) => Promise<void>;
+  register: () => Promise<{ userId: string; username: string }>;
   logout: () => void;
 }
 
@@ -45,12 +45,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const register = async (username: string) => {
+  const register = async () => {
     try {
-      const newUser = await apiClient.register(username);
-      const userObj = { id: newUser.userId, username: newUser.username };
+      const response = await apiClient.register();
+      const userObj = { id: response.userId, username: response.username };
       setUser(userObj);
       localStorage.setItem('user', JSON.stringify(userObj));
+      return response;
     } catch (error) {
       console.error('Registration failed:', error);
       throw error;

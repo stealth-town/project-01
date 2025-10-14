@@ -12,26 +12,18 @@ interface BuildingIdleViewProps {
 
 export function BuildingIdleView({ building, balances, onUpdate }: BuildingIdleViewProps) {
   const { user } = useAuth();
-  const [selectedRisk, setSelectedRisk] = useState<RiskMode | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const riskModes = [
-    { mode: RiskMode.TURTLE, name: 'Turtle', icon: '🐢', color: '#48bb78' },
-    { mode: RiskMode.WALK, name: 'Walk', icon: '🚶', color: '#ed8936' },
-    { mode: RiskMode.CHEETAH, name: 'Cheetah', icon: '🐆', color: '#f56565' },
-  ];
-
-  const handleStartTrade = async () => {
-    if (!user || !selectedRisk) return;
+  const handleStartTrade = async (mode: RiskMode) => {
+    if (!user) return;
 
     setIsLoading(true);
     setError('');
 
     try {
-      await apiClient.startTrade(user.id, building.id, selectedRisk);
+      await apiClient.startTrade(user.id, building.id, mode);
       onUpdate();
-      setSelectedRisk(null);
     } catch (err: any) {
       setError(err.message || 'Failed to start trade');
     } finally {
@@ -41,69 +33,49 @@ export function BuildingIdleView({ building, balances, onUpdate }: BuildingIdleV
 
   return (
     <div className="building-idle-view">
-      <p className="idle-message">Select a risk mode to start trading</p>
+      <h2>Select Risk Mode</h2>
 
-      <div className="risk-modes">
-        {riskModes.map(({ mode, name, icon, color }) => {
+      <div className="mode-selection-grid">
+        {[RiskMode.TURTLE, RiskMode.WALK, RiskMode.CHEETAH].map(mode => {
           const config = RISK_MODE_CONFIG[mode];
           const canAfford = balances.energy >= config.energyCost;
-          const isSelected = selectedRisk === mode;
+          const modeIcon = mode === RiskMode.TURTLE ? '🐢' : mode === RiskMode.WALK ? '🚶' : '🐆';
 
           return (
-            <button
-              key={mode}
-              className={`risk-mode-button ${isSelected ? 'selected' : ''} ${!canAfford ? 'disabled' : ''}`}
-              style={{ borderColor: isSelected ? color : undefined }}
-              onClick={() => canAfford && setSelectedRisk(mode)}
-              disabled={!canAfford}
-            >
-              <div className="risk-icon">{icon}</div>
-              <div className="risk-info">
-                <span className="risk-name">{name}</span>
-                <div className="risk-stats">
-                  <span className="stat">⚡ {config.energyCost}</span>
-                  <span className="stat">⏱️ {config.duration / 60}m</span>
-                  <span className="stat">🎁 {config.tokensReward}</span>
-                </div>
-                {!canAfford && <span className="insufficient">Insufficient energy</span>}
+            <div key={mode} className={`mode-card mode-${mode}`}>
+              <div className="mode-header">
+                <span className="mode-icon">{modeIcon}</span>
+                <h3>{mode.toUpperCase()}</h3>
               </div>
-            </button>
+
+              <div className="mode-stats">
+                <div className="stat">
+                  <span className="label">Duration</span>
+                  <span className="value">{config.duration}s</span>
+                </div>
+                <div className="stat">
+                  <span className="label">Liquidation</span>
+                  <span className="value">{(config.liquidationThreshold * 100).toFixed(2)}%</span>
+                </div>
+                <div className="stat">
+                  <span className="label">Reward</span>
+                  <span className="value">{config.tokensReward} 🎁</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => handleStartTrade(mode)}
+                disabled={isLoading || !canAfford}
+                className="start-trade-button"
+              >
+                {isLoading ? 'Starting...' : canAfford ? `Start (${config.energyCost} ⚡)` : 'Insufficient Energy'}
+              </button>
+            </div>
           );
         })}
       </div>
 
-      {selectedRisk && (
-        <div className="trade-details">
-          <div className="detail-row">
-            <span>Energy Cost:</span>
-            <span className="detail-value">{RISK_MODE_CONFIG[selectedRisk].energyCost} ⚡</span>
-          </div>
-          <div className="detail-row">
-            <span>Duration:</span>
-            <span className="detail-value">{RISK_MODE_CONFIG[selectedRisk].duration / 60} minutes</span>
-          </div>
-          <div className="detail-row">
-            <span>Reward:</span>
-            <span className="detail-value">{RISK_MODE_CONFIG[selectedRisk].tokensReward} tokens</span>
-          </div>
-          <div className="detail-row">
-            <span>Liquidation:</span>
-            <span className="detail-value danger">
-              {(RISK_MODE_CONFIG[selectedRisk].liquidationThreshold * 100).toFixed(0)}% drop
-            </span>
-          </div>
-        </div>
-      )}
-
       {error && <div className="error-message">{error}</div>}
-
-      <button
-        onClick={handleStartTrade}
-        disabled={!selectedRisk || isLoading}
-        className="start-trade-button"
-      >
-        {isLoading ? 'Starting Trade...' : 'Start Trade'}
-      </button>
     </div>
   );
 }

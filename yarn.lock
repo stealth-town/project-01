@@ -1486,6 +1486,7 @@ __metadata:
     eslint-plugin-react-hooks: "npm:^5.2.0"
     eslint-plugin-react-refresh: "npm:^0.4.22"
     globals: "npm:^16.4.0"
+    lightweight-charts: "npm:^5.0.9"
     react: "npm:^19.1.1"
     react-dom: "npm:^19.1.1"
     react-router-dom: "npm:^7.9.4"
@@ -2216,6 +2217,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"fancy-canvas@npm:2.1.0":
+  version: 2.1.0
+  resolution: "fancy-canvas@npm:2.1.0"
+  checksum: 10c0/2b863b1548214ac793a5104154be389dbca6847c53c8bda88e4309f14bcdb498f4da21e368b573f3ab5f458d3b47c3f0ef731a7b90c8264b23c1cf0bfc9d1da3
+  languageName: node
+  linkType: hard
+
 "fast-deep-equal@npm:^3.1.1, fast-deep-equal@npm:^3.1.3":
   version: 3.1.3
   resolution: "fast-deep-equal@npm:3.1.3"
@@ -2789,6 +2797,15 @@ __metadata:
     prelude-ls: "npm:^1.2.1"
     type-check: "npm:~0.4.0"
   checksum: 10c0/effb03cad7c89dfa5bd4f6989364bfc79994c2042ec5966cb9b95990e2edee5cd8969ddf42616a0373ac49fac1403437deaf6e9050fbbaa3546093a59b9ac94e
+  languageName: node
+  linkType: hard
+
+"lightweight-charts@npm:^5.0.9":
+  version: 5.0.9
+  resolution: "lightweight-charts@npm:5.0.9"
+  dependencies:
+    fancy-canvas: "npm:2.1.0"
+  checksum: 10c0/2153471f31f98213711de5cfcd215a23d14ec2d01bae92ac89293cc40edc1e803feb706b2a44805a82f8b94660c4fe5c1f1fc0e8b2cf4dcc29966a9747352931
   languageName: node
   linkType: hard
 

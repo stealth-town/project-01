@@ -6,9 +6,9 @@ import { useAuth } from '../contexts/AuthContext';
 export function LoginPage() {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [userId, setUserId] = useState('');
-  const [username, setUsername] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [registeredUserId, setRegisteredUserId] = useState<string | null>(null);
 
   const { login, register } = useAuth();
   const navigate = useNavigate();
@@ -22,23 +22,63 @@ export function LoginPage() {
       if (mode === 'login') {
         if (!userId.trim()) {
           setError('Please enter your User ID');
+          setIsLoading(false);
           return;
         }
         await login(userId);
+        navigate('/town');
       } else {
-        if (!username.trim()) {
-          setError('Please enter a username');
-          return;
-        }
-        await register(username);
+        const response = await register();
+        setRegisteredUserId(response.userId);
+        // Don't navigate yet, show the user ID first
       }
-      navigate('/town');
     } catch (err: any) {
       setError(err.message || 'Authentication failed');
     } finally {
       setIsLoading(false);
     }
   };
+
+  const handleCopyAndContinue = () => {
+    if (registeredUserId) {
+      navigator.clipboard.writeText(registeredUserId);
+      navigate('/town');
+    }
+  };
+
+  // Show success screen after registration
+  if (registeredUserId) {
+    return (
+      <div className="login-page">
+        <div className="login-container">
+          <h1>Registration Successful!</h1>
+          <p className="subtitle">Save this User ID to login later</p>
+
+          <div className="user-id-display">
+            <label>Your User ID:</label>
+            <div className="user-id-box">
+              <code>{registeredUserId}</code>
+            </div>
+            <p className="hint">
+              Copy this ID and save it somewhere safe. You'll need it to login.
+            </p>
+          </div>
+
+          <button onClick={handleCopyAndContinue} className="submit-button">
+            Copy ID & Continue to Town
+          </button>
+
+          <button
+            onClick={() => setRegisteredUserId(null)}
+            className="secondary-button"
+            style={{ marginTop: '10px' }}
+          >
+            Back
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="login-page">
@@ -49,13 +89,19 @@ export function LoginPage() {
         <div className="mode-toggle">
           <button
             className={mode === 'login' ? 'active' : ''}
-            onClick={() => setMode('login')}
+            onClick={() => {
+              setMode('login');
+              setError('');
+            }}
           >
             Login
           </button>
           <button
             className={mode === 'register' ? 'active' : ''}
-            onClick={() => setMode('register')}
+            onClick={() => {
+              setMode('register');
+              setError('');
+            }}
           >
             Register
           </button>
@@ -73,27 +119,20 @@ export function LoginPage() {
                 placeholder="Paste your user ID here"
                 disabled={isLoading}
               />
-              <p className="hint">Get your User ID by registering first</p>
+              <p className="hint">Don't have an ID? Register first to get one.</p>
             </div>
           ) : (
             <div className="form-group">
-              <label htmlFor="username">Username</label>
-              <input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Choose a username"
-                disabled={isLoading}
-              />
-              <p className="hint">After registering, save your User ID to login later</p>
+              <p className="hint">
+                Click Register to create a new account. You'll get a User ID that you can use to login later.
+              </p>
             </div>
           )}
 
           {error && <div className="error-message">{error}</div>}
 
           <button type="submit" className="submit-button" disabled={isLoading}>
-            {isLoading ? 'Loading...' : mode === 'login' ? 'Login' : 'Register'}
+            {isLoading ? 'Loading...' : mode === 'login' ? 'Login' : 'Create New Account'}
           </button>
         </form>
       </div>

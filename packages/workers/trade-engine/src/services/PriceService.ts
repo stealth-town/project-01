@@ -9,6 +9,8 @@ interface BinancePriceResponse {
 /**
  * PriceService - Real-time price feed from Binance API
  * Fetches current ETH/USDT price from Binance
+ *
+ * This is a copy for the worker thread - needs to be independent
  */
 export class PriceService {
 

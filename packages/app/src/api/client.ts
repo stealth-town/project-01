@@ -36,10 +36,9 @@ class ApiClient {
   }
 
   // Auth endpoints
-  async register(username: string) {
-    return this.request<{ userId: string; username: string }>('/auth/register', {
+  async register() {
+    return this.request<{ userId: string; username: string; message: string }>('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ username }),
     });
   }
 
@@ -54,7 +53,7 @@ class ApiClient {
   async getTownState(userId: string) {
     return this.request<{
       balances: UserBalances;
-      town: { id: string; userId: string; townLevel: number };
+      town: { level: number; unlockedSlots: number };
       buildings: TownBuilding[];
     }>(`/town/state/${userId}`);
   }

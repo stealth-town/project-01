@@ -3,3 +3,4 @@ export * from './BuildingRepo.js';
 export * from './TradeRepo.js';
 export * from './EnergyPurchaseRepo.js';
 export * from './BuildingPurchaseRepo.js';
+export * from './AssetRepo.js';
