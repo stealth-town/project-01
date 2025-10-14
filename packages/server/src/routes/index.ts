@@ -1,24 +1,22 @@
 import { Router } from 'express';
-import dummyRoutes from './dummy.routes.js';
-
+import authRoutes from './auth.routes.js';
+import townRoutes from './town.routes.js';
 
 /**
- * @description Main router file
- * 
- * This is where the router lives
- * (his mom lives in the package down the street)
- * 
- * TODO - 
+ * Main router file
+ * Routes for MVP Town-Investment Loop
  */
-
 
 const router = Router();
 
-router.use('/dummy', dummyRoutes);
-// router.use('/town', townRoutes);
+// Auth routes (register/login workaround)
+router.use('/auth', authRoutes);
+
+// Town routes (energy, buildings, trades)
+router.use('/town', townRoutes);
+
+// Future routes
 // router.use('/character', characterRoutes);
-
-
-
+// router.use('/dungeon', dungeonRoutes);
 
 export default router;

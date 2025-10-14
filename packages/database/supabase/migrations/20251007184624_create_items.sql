@@ -12,7 +12,7 @@ CREATE TABLE items (
     
     -- Equipment state
     is_equipped BOOLEAN NOT NULL DEFAULT FALSE,
-    equipped_slot INTEGER CHECK (equipped_slot BETWEEN 1 AND 6),
+    equipped_slot INTEGER CHECK (equipped_slot BETWEEN 1 AND 6), -- TODO - 
     
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
