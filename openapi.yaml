@@ -1,0 +1,1140 @@
+openapi: 3.0.3
+info:
+  title: Tokabu Town API
+  description: API for the Tokabu Town game - MVP Town-Investment Loop
+  version: 1.0.0
+  contact:
+    name: API Support
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Auth
+    description: Authentication and user management
+  - name: Town
+    description: Town management, buildings, and trades
+  - name: Items
+    description: Character items and equipment management
+  - name: Characters
+    description: Character generation and management
+  - name: Dungeon
+    description: Dungeon runs and reward management
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      description: Check if the API is running
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      summary: Register or fetch user
+      description: Register a new user or fetch existing user by ID
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                  description: 'Optional: existing user ID to fetch. If not provided, creates new user'
+            examples:
+              newUser:
+                summary: Create new user
+                value: {}
+              existingUser:
+                summary: Fetch existing user
+                value:
+                  userId: 123e4567-e89b-12d3-a456-426614174000
+      responses:
+        '200':
+          description: User created or found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  message:
+                    type: string
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Registration failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login with user ID
+      description: Login with existing user ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId]
+              properties:
+                userId:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  message:
+                    type: string
+        '400':
+          description: User ID required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Login failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/town/state/{userId}:
+    get:
+      tags: [Town]
+      summary: Get complete town state
+      description: Get complete town state including balances, town info, and buildings
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Town state retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  balances:
+                    type: object
+                  town:
+                    type: object
+                  buildings:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Building'
+        '500':
+          description: Failed to get town state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/town/buy-energy:
+    post:
+      tags: [Town]
+      summary: Purchase energy package
+      description: Buy an energy package for the user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, packageType]
+              properties:
+                userId:
+                  type: string
+                packageType:
+                  type: string
+                  description: Type of energy package to buy
+      responses:
+        '200':
+          description: Energy purchased successfully
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Missing fields or insufficient balance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Failed to buy energy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/town/buy-building:
+    post:
+      tags: [Town]
+      summary: Purchase a building slot
+      description: Buy a building slot in the town
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, slotNumber]
+              properties:
+                userId:
+                  type: string
+                slotNumber:
+                  type: integer
+                  description: Building slot number to purchase
+      responses:
+        '200':
+          description: Building purchased successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  building:
+                    $ref: '#/components/schemas/Building'
+        '400':
+          description: Purchase failed (insufficient funds, invalid slot, etc.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Failed to buy building
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/town/start-trade:
+    post:
+      tags: [Town]
+      summary: Start a trade on a building
+      description: Start a trading operation on a building
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, buildingId, riskMode]
+              properties:
+                userId:
+                  type: string
+                buildingId:
+                  type: string
+                riskMode:
+                  type: string
+                  description: Risk mode for the trade
+      responses:
+        '200':
+          description: Trade started successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  trade:
+                    type: object
+        '400':
+          description: Trade start failed (insufficient resources, invalid parameters, etc.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Failed to start trade
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/town/claim-reward:
+    post:
+      tags: [Town]
+      summary: Claim reward from trade
+      description: Claim reward from a completed or liquidated trade
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, tradeId]
+              properties:
+                userId:
+                  type: string
+                tradeId:
+                  type: string
+      responses:
+        '200':
+          description: Reward claimed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Claim failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Failed to claim reward
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/town/trades/{userId}:
+    get:
+      tags: [Town]
+      summary: Get all user trades
+      description: Get all trades (active and completed) for a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Trades retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+        '500':
+          description: Failed to get trades
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/items/character/{characterId}:
+    get:
+      tags: [Items]
+      summary: Get all character items
+      description: Get all items for a specific character
+      parameters:
+        - name: characterId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Items retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Item'
+        '400':
+          description: Missing character ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Failed to get character items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/items/character/{characterId}/equipped:
+    get:
+      tags: [Items]
+      summary: Get equipped items
+      description: Get all equipped items for a character
+      parameters:
+        - name: characterId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Equipped items retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  equippedItems:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Item'
+        '400':
+          description: Missing character ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Failed to get equipped items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/items/character/{characterId}/summary:
+    get:
+      tags: [Items]
+      summary: Get equipment summary
+      description: Get equipment summary for a character
+      parameters:
+        - name: characterId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Equipment summary retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Missing character ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Failed to get equipment summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/items/character/{characterId}/type/{itemType}:
+    get:
+      tags: [Items]
+      summary: Get items by type
+      description: Get all items of a specific type for a character
+      parameters:
+        - name: characterId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: itemType
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [weapon, armor, accessory, helmet, boots, gloves]
+      responses:
+        '200':
+          description: Items retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Item'
+        '400':
+          description: Missing parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Failed to get items by type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/items/{itemId}:
+    get:
+      tags: [Items]
+      summary: Get item by ID
+      description: Get a specific item by its ID
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Item retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  item:
+                    $ref: '#/components/schemas/Item'
+        '400':
+          description: Missing item ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Failed to get item
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/items:
+    post:
+      tags: [Items]
+      summary: Create new item
+      description: Create a new item for a character (itemType and damageContribution are auto-generated)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [characterId]
+              properties:
+                characterId:
+                  type: string
+                  description: Character ID to create item for
+            example:
+              characterId: char-123
+      responses:
+        '201':
+          description: Item created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  item:
+                    $ref: '#/components/schemas/Item'
+        '400':
+          description: Invalid input (missing character ID)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Failed to create item
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/items/equip:
+    post:
+      tags: [Items]
+      summary: Equip an item
+      description: Equip an item (slot is auto-selected)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [itemId]
+              properties:
+                itemId:
+                  type: string
+                  description: Item ID to equip
+            example:
+              itemId: item-123
+      responses:
+        '200':
+          description: Item equipped
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  item:
+                    $ref: '#/components/schemas/Item'
+        '400':
+          description: Equipment failed (slot occupied, already equipped)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Failed to equip item
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/items/unequip:
+    post:
+      tags: [Items]
+      summary: Unequip an item
+      description: Unequip an item from its current slot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [itemId]
+              properties:
+                itemId:
+                  type: string
+                  description: Item ID to unequip
+            example:
+              itemId: item-123
+      responses:
+        '200':
+          description: Item unequipped
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  item:
+                    $ref: '#/components/schemas/Item'
+        '400':
+          description: Item not equipped
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Failed to unequip item
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/characters/generate:
+    post:
+      tags: [Characters]
+      summary: Generate a new character
+      description: Create a new character for a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId]
+              properties:
+                userId:
+                  type: string
+                  description: User ID to create character for
+            example:
+              userId: user-123
+      responses:
+        '201':
+          description: Character created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Character created
+                  character:
+                    $ref: '#/components/schemas/Character'
+        '400':
+          description: Missing required fields or user already has a character
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Failed to generate character
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/characters/{characterId}:
+    get:
+      tags: [Characters]
+      summary: Get character by ID
+      description: Retrieve a character by its ID
+      parameters:
+        - name: characterId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Character ID
+      responses:
+        '200':
+          description: Character retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  character:
+                    $ref: '#/components/schemas/Character'
+        '404':
+          description: Character not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Failed to get character
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/dungeon/character/{characterId}/unclaimed:
+    get:
+      tags: [Dungeon]
+      summary: Get unclaimed dungeon runs
+      description: Get all unclaimed (finished but not claimed) dungeon runs for a character
+      parameters:
+        - name: characterId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Character ID
+      responses:
+        '200':
+          description: Unclaimed runs retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  runs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DungeonRun'
+                  count:
+                    type: integer
+                    description: Number of unclaimed runs
+        '400':
+          description: Missing character ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Character not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Failed to get unclaimed dungeon runs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/dungeon/claim:
+    post:
+      tags: [Dungeon]
+      summary: Claim dungeon run reward
+      description: Claim reward for a specific completed dungeon run
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [dungeonRunId, userId]
+              properties:
+                dungeonRunId:
+                  type: string
+                  description: ID of the dungeon run to claim
+                userId:
+                  type: string
+                  description: ID of the user claiming the reward
+            example:
+              dungeonRunId: run-123
+              userId: user-456
+      responses:
+        '200':
+          description: Reward claimed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Reward claimed successfully
+                  tokensAwarded:
+                    type: number
+                    description: Number of tokens awarded
+                  run:
+                    $ref: '#/components/schemas/DungeonRun'
+        '400':
+          description: Invalid claim request (already claimed, not finished, etc.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Dungeon run not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Failed to claim reward
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/dungeon/claim-all:
+    post:
+      tags: [Dungeon]
+      summary: Claim all dungeon run rewards
+      description: Claim rewards for all unclaimed dungeon runs for a character
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [characterId, userId]
+              properties:
+                characterId:
+                  type: string
+                  description: ID of the character whose rewards to claim
+                userId:
+                  type: string
+                  description: ID of the user claiming the rewards
+            example:
+              characterId: char-123
+              userId: user-456
+      responses:
+        '200':
+          description: All rewards claimed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: All rewards claimed successfully
+                  totalTokens:
+                    type: number
+                    description: Total number of tokens awarded
+                  claimedCount:
+                    type: integer
+                    description: Number of runs claimed
+                  runs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DungeonRun'
+        '400':
+          description: Invalid claim request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Character not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Failed to claim all rewards
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/dungeon/runs/{dungeonRunId}:
+    get:
+      tags: [Dungeon]
+      summary: Get dungeon run by ID
+      description: Get a specific dungeon run by its ID
+      parameters:
+        - name: dungeonRunId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Dungeon run ID
+      responses:
+        '200':
+          description: Dungeon run retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  run:
+                    $ref: '#/components/schemas/DungeonRun'
+        '400':
+          description: Missing dungeon run ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Dungeon run not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Failed to get dungeon run
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/dungeon/character/{characterId}/runs:
+    get:
+      tags: [Dungeon]
+      summary: Get all character dungeon runs
+      description: Get all dungeon runs (active, completed, and claimed) for a character
+      parameters:
+        - name: characterId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Character ID
+      responses:
+        '200':
+          description: Dungeon runs retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  runs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DungeonRun'
+                  count:
+                    type: integer
+                    description: Total number of runs
+        '400':
+          description: Missing character ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Character not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Failed to get character dungeon runs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Building:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        slotNumber:
+          type: integer
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Item:
+      type: object
+      properties:
+        id:
+          type: string
+        characterId:
+          type: string
+        itemType:
+          type: string
+          enum: [weapon, armor, accessory, helmet, boots, gloves]
+        damageContribution:
+          type: number
+        slot:
+          type: integer
+          nullable: true
+          description: Equipment slot number (1-6) or null if not equipped
+        createdAt:
+          type: string
+          format: date-time
+
+    Character:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Character UUID
+        user_id:
+          type: string
+          description: User ID that owns this character
+        damage_rating:
+          type: integer
+          description: Cached damage rating (recalculated on equipment changes)
+          default: 0
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    DungeonRun:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Dungeon run UUID
+        character_id:
+          type: string
+          description: Character ID that ran the dungeon
+        user_id:
+          type: string
+          description: User ID that owns the character
+        duration_seconds:
+          type: integer
+          description: Duration of the dungeon run in seconds
+        starting_damage_rating:
+          type: integer
+          description: Character's damage rating at the start of the run
+        started_at:
+          type: string
+          format: date-time
+          description: When the dungeon run started
+        finished_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the dungeon run finished (null if still active)
+        claimed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the rewards were claimed (null if not yet claimed)
+        reward_amount:
+          type: number
+          nullable: true
+          description: Amount of tokens rewarded (null if not yet calculated)
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+

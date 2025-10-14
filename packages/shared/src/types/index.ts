@@ -15,3 +15,5 @@ export * from "./town.js";
 
 // Constants
 export * from "./constants.js";
+
+export * from "./item.js";
