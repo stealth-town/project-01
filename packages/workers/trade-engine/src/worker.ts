@@ -9,14 +9,14 @@ import { type Trade } from '@stealth-town/shared/types';
 
 const { workerId } = workerData;
 
-console.log(`[Worker ${workerId}] Starting trade monitoring...`);
+console.log(`[Worker ${workerId}] Starting trade monitoring with RealTradeResolver...`);
 
 // Initialize repositories
 const tradeRepo = new TradeRepo();
 const buildingRepo = new BuildingRepo();
 const userRepo = new UserRepo();
 
-// Initialize resolver with database integration
+// Initialize resolver with RealTradeResolver using Binance price feed
 const realResolver = new RealTradeResolver();
 const resolverWrapper = new TradeResolverWrapper(
   realResolver,

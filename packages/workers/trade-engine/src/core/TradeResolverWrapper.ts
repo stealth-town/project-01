@@ -65,21 +65,19 @@ export class TradeResolverWrapper {
           resolution.tokensReward || 0
         );
 
-        // Add tokens to user balance
-        if (resolution.tokensReward && resolution.tokensReward > 0) {
-          await this.userRepo.addTokens(trade.userId, resolution.tokensReward);
-          console.log(`💰 Added ${resolution.tokensReward} tokens to user ${trade.userId}`);
-        }
+        // Update building status to 'completed' - requires user to claim
+        await this.buildingRepo.updateBuildingStatus(trade.buildingId, BuildingStatus.COMPLETED);
+        console.log(`✅ Trade ${resolution.tradeId} completed - Building ${trade.buildingId} awaiting claim`);
 
       } else if (resolution.status === 'liquidated') {
         // Update trade as liquidated
+        // Note: Tokens are awarded when user claims the liquidated trade (100 tokens consolation)
         await this.tradeRepo.resolveLiquidation(resolution.tradeId);
-        console.log(`💥 Trade ${resolution.tradeId} liquidated`);
-      }
 
-      // Update building status back to idle
-      await this.buildingRepo.updateBuildingStatus(trade.buildingId, BuildingStatus.IDLE);
-      console.log(`🏢 Building ${trade.buildingId} set to idle`);
+        // Update building status to 'liquidated' - requires user to claim
+        await this.buildingRepo.updateBuildingStatus(trade.buildingId, BuildingStatus.LIQUIDATED);
+        console.log(`💥 Trade ${resolution.tradeId} liquidated - Building ${trade.buildingId} awaiting claim`);
+      }
 
     } catch (error) {
       console.error(`❌ Failed to update database for trade ${trade.id}:`, error);

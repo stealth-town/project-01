@@ -18,7 +18,7 @@ export class TradeMonitor {
     private subscription: TradeSubscription;
     private tradeRepo: TradeRepo;
     private pollingInterval?: NodeJS.Timeout;
-    private pollingIntervalMs: number = 10000; // Poll every 10 seconds
+    private pollingIntervalMs: number = 1000; // Poll every 1 second
     private processedTrades: Set<string> = new Set(); // Track processed trades
 
     constructor(callback: TradeTriggerCallback, tradeRepo: TradeRepo) {

@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import type { TownBuilding, UserBalances } from '@stealth-town/shared/types';
 import { BuildingStatus } from '@stealth-town/shared/types';
 import { BuildingIdleView } from './building-states/BuildingIdleView';
@@ -23,8 +22,6 @@ interface BuildingCardProps {
  * 3. Maintain clean separation of concerns
  */
 export function BuildingCard({ building, balances, onUpdate }: BuildingCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-
   const renderBuildingState = () => {
     switch (building.status) {
       case BuildingStatus.IDLE:
@@ -40,8 +37,6 @@ export function BuildingCard({ building, balances, onUpdate }: BuildingCardProps
         return (
           <BuildingActiveView
             building={building}
-            isExpanded={isExpanded}
-            onToggleExpand={() => setIsExpanded(!isExpanded)}
           />
         );
 

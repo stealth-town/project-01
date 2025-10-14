@@ -63,9 +63,15 @@ export class UserRepo {
 
   async addCurrency(userId: string, currency: 'energy' | 'tokens' | 'usdc', amount: number) {
     const balances = await this.getBalances(userId);
-    const newBalance = balances[currency] + amount;
+    const oldBalance = balances[currency];
+    const newBalance = oldBalance + amount;
+
+    console.log(`💵 UserRepo.addCurrency - ${currency}: ${oldBalance} + ${amount} = ${newBalance}`);
 
     await this.updateBalances(userId, { [currency]: newBalance });
+
+    console.log(`✅ UserRepo.addCurrency - ${currency} updated to ${newBalance}`);
+
     return newBalance;
   }
 
