@@ -12,7 +12,7 @@ INSERT INTO characters (id, user_id, damage_rating) VALUES
 
 INSERT INTO towns (id, user_id, level, max_slots) VALUES
   (gen_random_uuid(), '155a5707-ef8a-4508-b3ad-515a34f73506', 1, 3),
-  (gen_random_uuid(), '2628ddc0-4250-40b4-af78-a74825acaf45', 1, 3);'
+  (gen_random_uuid(), '2628ddc0-4250-40b4-af78-a74825acaf45', 1, 3);
   
 
 -- TODO - add items or something 
