@@ -237,6 +237,27 @@ export type Database = {
           },
         ]
       }
+      concrete_items: {
+        Row: {
+          category: Database["public"]["Enums"]["item_category_enum"]
+          dmg: number
+          id: number
+          item_name: string
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["item_category_enum"]
+          dmg: number
+          id?: number
+          item_name: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["item_category_enum"]
+          dmg?: number
+          id?: number
+          item_name?: string
+        }
+        Relationships: []
+      }
       dungeon_events: {
         Row: {
           character_dungeon_id: string
@@ -337,32 +358,35 @@ export type Database = {
       items: {
         Row: {
           character_id: string
+          concrete_item_id: number | null
           created_at: string
           damage_contribution: number
           equipped_slot: number | null
           id: string
           is_equipped: boolean
-          item_type: Database["public"]["Enums"]["item_type"]
+          rarity: Database["public"]["Enums"]["item_rarity_enum"]
           updated_at: string
         }
         Insert: {
           character_id: string
+          concrete_item_id?: number | null
           created_at?: string
           damage_contribution: number
           equipped_slot?: number | null
           id?: string
           is_equipped?: boolean
-          item_type: Database["public"]["Enums"]["item_type"]
+          rarity?: Database["public"]["Enums"]["item_rarity_enum"]
           updated_at?: string
         }
         Update: {
           character_id?: string
+          concrete_item_id?: number | null
           created_at?: string
           damage_contribution?: number
           equipped_slot?: number | null
           id?: string
           is_equipped?: boolean
-          item_type?: Database["public"]["Enums"]["item_type"]
+          rarity?: Database["public"]["Enums"]["item_rarity_enum"]
           updated_at?: string
         }
         Relationships: [
@@ -371,6 +395,13 @@ export type Database = {
             columns: ["character_id"]
             isOneToOne: false
             referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_concrete_item_id_fkey"
+            columns: ["concrete_item_id"]
+            isOneToOne: false
+            referencedRelation: "concrete_items"
             referencedColumns: ["id"]
           },
         ]
@@ -532,6 +563,14 @@ export type Database = {
     Enums: {
       building_status: "idle" | "active" | "completed" | "liquidated"
       energy_package: "small" | "medium" | "large"
+      item_category_enum:
+        | "helmet"
+        | "weapon1"
+        | "weapon2"
+        | "boots"
+        | "trinket"
+        | "armor"
+      item_rarity_enum: "common" | "rare" | "epic" | "legendary"
       item_type:
         | "weapon"
         | "armor"
@@ -680,6 +719,15 @@ export const Constants = {
     Enums: {
       building_status: ["idle", "active", "completed", "liquidated"],
       energy_package: ["small", "medium", "large"],
+      item_category_enum: [
+        "helmet",
+        "weapon1",
+        "weapon2",
+        "boots",
+        "trinket",
+        "armor",
+      ],
+      item_rarity_enum: ["common", "rare", "epic", "legendary"],
       item_type: ["weapon", "armor", "accessory", "helmet", "boots", "gloves"],
       risk_mode: ["turtle", "walk", "cheetah"],
       trade_claimed: ["unclaimed", "claimed", "non_applicable"],

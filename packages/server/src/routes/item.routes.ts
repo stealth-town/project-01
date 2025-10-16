@@ -163,7 +163,15 @@ router.get("/:itemId", async (req: Request, res: Response) => {
  */
 router.post("/", async (req: Request, res: Response) => {
   try {
-    const { characterId, userId } = req.body;
+    const { characterId, userId, choice } = req.body;
+
+    const choiceInt = parseInt(choice);
+    if (isNaN(choiceInt) || choiceInt < 0 || choiceInt > 2) {
+      return res.status(400).json({
+        error: "Invalid choice",
+        message: "choice must be a number",
+      });
+    }
 
     if (!characterId || !userId) {
       return res.status(400).json({
@@ -172,18 +180,18 @@ router.post("/", async (req: Request, res: Response) => {
       });
     }
 
-    const item = await itemService.createItem(characterId, userId);
+    const items = await itemService.createItem(characterId, userId, choice);
 
     res.status(201).json({
-      item,
+      items,
       message: "Item purchased successfully for 100 tokens"
     });
   } catch (error: any) {
     console.error("Create item error:", error);
 
     if (error.message.includes("Insufficient tokens") ||
-        error.message.includes("Inventory is full") ||
-        error.message.includes("does not belong to user")) {
+      error.message.includes("Inventory is full") ||
+      error.message.includes("does not belong to user")) {
       return res.status(400).json({
         error: "Cannot purchase item",
         message: error.message,

@@ -3,7 +3,7 @@
  */
 
 import type { ItemId, TownId, BuildingId } from "./primitives.js";
-import type { ItemRarity } from "./enums.js";
+import type { ItemRarity } from "./item.js";
 
 export interface GameItem {
   id: ItemId;

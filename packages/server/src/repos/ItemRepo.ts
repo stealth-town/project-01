@@ -1,10 +1,10 @@
 import { supabaseClient } from "@stealth-town/shared/supabase";
-import type { ItemId, CharacterId, ItemType } from "@stealth-town/shared/types";
-
+import type { ItemId, CharacterId, ItemType, ItemRarity } from "@stealth-town/shared/types";
 export interface ItemData {
   id?: ItemId;
   character_id: CharacterId;
-  item_type: "weapon" | "armor" | "accessory" | "helmet" | "boots" | "gloves";
+  concrete_item_id: number;
+  rarity: ItemRarity;
   damage_contribution: number;
   is_equipped?: boolean;
   equipped_slot?: number;

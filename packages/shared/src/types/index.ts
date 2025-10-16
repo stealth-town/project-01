@@ -17,3 +17,4 @@ export * from "./town.js";
 export * from "./constants.js";
 
 export * from "./item.js";
+export * from "./concrete_items.js";
