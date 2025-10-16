@@ -3,10 +3,19 @@ import { ItemRepo, type ItemData } from "../../repos/ItemRepo.js";
 import { CharacterService } from "../character/CharacterService.js";
 import { DungeonService } from "../dungeon/DungeonService.js";
 import { UserRepo } from "../../repos/UserRepo.js";
+import { ConcreteItemsRepo } from "../../repos/ConcreteItemsRepo.js";
+import type { ConcreteItem, ItemRarity } from "@stealth-town/shared/types";
+
+const SEED = process.env.SEED || "randomseeeeeed";
 
 export interface EquipItemRequest {
   itemId: ItemId;
   slot: number;
+}
+
+export type ItemWithRarity = {
+  item: ConcreteItem;
+  rarity: ItemRarity;
 }
 
 export class ItemService {
@@ -14,12 +23,14 @@ export class ItemService {
   private characterService: CharacterService;
   private dungeonService: DungeonService;
   private userRepo: UserRepo;
+  private concreteItemsRepo: ConcreteItemsRepo;
 
   constructor() {
     this.itemRepo = new ItemRepo();
     this.characterService = new CharacterService();
     this.dungeonService = new DungeonService();
     this.userRepo = new UserRepo();
+    this.concreteItemsRepo = new ConcreteItemsRepo();
   }
 
   /**
@@ -54,17 +65,29 @@ export class ItemService {
     return item;
   }
 
-  private getRandomItemType(): ItemType {
-    return ["weapon", "armor", "accessory", "helmet", "boots", "gloves"][
-      Math.floor(Math.random() * 6)
-    ] as ItemType;
+  private getRandomItem(): number {
+    return Math.floor(Math.random() * 30) + 1;
+  }
+
+  private getItemRarity(): ItemRarity {
+    const rarity = Math.floor(Math.random() * 100) + 1;
+
+    if (rarity <= 55) {
+      return "common" as ItemRarity;
+    } else if (rarity <= 80) {
+      return "rare" as ItemRarity;
+    } else if (rarity <= 95) {
+      return "epic" as ItemRarity;
+    } else {
+      return "legendary" as ItemRarity;
+    }
   }
 
   /**
    * Create a new item for a character (buy item pack)
    * Costs 100 tokens per item
    */
-  async createItem(character_id: CharacterId, user_id: UserId) {
+  async createItem(character_id: CharacterId, user_id: UserId, choice: number) {
     const ITEM_COST = 100; // tokens
 
     // Check if character belongs to user
@@ -81,22 +104,37 @@ export class ItemService {
 
     // Check token balance
     const user = await this.userRepo.findById(user_id);
-    if (user.tokens < ITEM_COST) {
-      throw new Error(`Insufficient tokens: required ${ITEM_COST}, available ${user.tokens}`);
-    }
+    // if (user.tokens < ITEM_COST) {
+    //   throw new Error(`Insufficient tokens: required ${ITEM_COST}, available ${user.tokens}`);
+    // }
 
     // Deduct tokens
-    await this.userRepo.deductCurrency(user_id, "tokens", ITEM_COST);
+    // await this.userRepo.deductCurrency(user_id, "tokens", ITEM_COST);
 
+    const concreteItems: ItemWithRarity[] = [];
+    for (let i = 0; i < 3; i++) {
+      const concreteItem = await this.concreteItemsRepo.getConcreteItem(this.getRandomItem());
+      const rarity = this.getItemRarity();
+      concreteItems.push({ item: concreteItem, rarity });
+    }
+
+    const choiceItem = concreteItems[choice];
+    if (!choiceItem) {
+      throw new Error("Choice item not found");
+    }
+    const rarityMultiplier = choiceItem.rarity === "common" ? 1 : choiceItem.rarity === "rare" ? 1.2 : choiceItem.rarity === "epic" ? 1.5 : 2;
     // Create item
     const itemData: ItemData = {
       character_id: character_id,
-      item_type: this.getRandomItemType(),
-      damage_contribution: Math.floor(Math.random() * 100) + 1, // 1-100 damage
+      concrete_item_id: choiceItem.item.id,
+      rarity: choiceItem.rarity,
+      damage_contribution: Math.ceil(choiceItem.item.dmg * rarityMultiplier),
       is_equipped: false,
     };
 
-    return await this.itemRepo.create(itemData);
+    await this.itemRepo.create(itemData);
+
+    return concreteItems;
   }
 
 

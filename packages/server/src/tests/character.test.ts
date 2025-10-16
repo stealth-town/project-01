@@ -19,15 +19,16 @@ describe("Character", () => {
             body: JSON.stringify(body),
         });
 
-        expect(res.status).to.be.lt(300);
-        return await res.json();
+        const data = await res.json();
+        expect(res.status, data.message || "").to.be.lt(300);
+        return data;
     }
 
     let userId: string, characterId: string, itemId: string;
 
     it("should create a user", async () => {
         const data = await callPostOnApi(`${apiUrl}/auth/register`, {});
-        userId = data.user.id;
+        userId = data.userId;
     });
 
     it("should create a character", async () => {
@@ -43,8 +44,18 @@ describe("Character", () => {
     });
 
     it("should create an item", async () => {
-        const data = await callPostOnApi(`${apiUrl}/items`, { characterId });
-        itemId = data.item.id;
+        const data = await callPostOnApi(`${apiUrl}/items`, { characterId, userId, choice: 0 });
+        console.log("data", ...data.items);
+    });
+
+    it("should get all items", async () => {
+        const res = await fetch(`${apiUrl}/items/character/${characterId}`, {
+            method: "GET",
+        });
+        expect(res.status).to.be.lt(300);
+        const data = await res.json();
+        expect(data.items.length).to.be.greaterThan(0);
+        itemId = data.items[0].id;
     });
 
     it("should get an item", async () => {
