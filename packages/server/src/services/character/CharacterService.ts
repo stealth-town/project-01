@@ -1,11 +1,14 @@
 import type { CharacterId, UserId } from "@stealth-town/shared/types";
 import { CharacterRepo, type CharacterData } from "../../repos/CharacterRepo.js";
+import { DungeonService } from "../dungeon/DungeonService.js";
 
 export class CharacterService {
     private characterRepo: CharacterRepo;
+    private dungeonService: DungeonService;
 
     constructor() {
         this.characterRepo = new CharacterRepo();
+        this.dungeonService = new DungeonService();
     }
 
     /**
@@ -41,7 +44,12 @@ export class CharacterService {
             damage_rating: 0,
         };
 
-        return await this.characterRepo.create(characterData);
+        const character = await this.characterRepo.create(characterData);
+
+        // Create initial dungeon run for the character
+        await this.dungeonService.createDungeonRunIfNeeded(character.id);
+
+        return character;
     }
 
     /**

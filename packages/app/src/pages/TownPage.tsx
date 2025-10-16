@@ -9,10 +9,11 @@ import { EnergyShop } from '../components/EnergyShop';
 import { BuildingShop } from '../components/BuildingShop';
 import { BuildingSidebar } from '../components/BuildingSidebar';
 import { TradingMainContent } from '../components/TradingMainContent';
+import { Navigation } from '../components/Navigation';
 // styles in main.scss
 
 export function TownPage() {
-  const { user, logout, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [balances, setBalances] = useState<UserBalances | null>(null);
   const [buildings, setBuildings] = useState<TownBuilding[]>([]);
@@ -119,22 +120,11 @@ export function TownPage() {
   const selectedBuilding = buildings.find(b => b.id === selectedBuildingId) || null;
 
   return (
-    <div className="town-page">
-      {/* Header */}
-      <header className="town-header">
-        <div className="header-content">
-          <h1>Stealth Town</h1>
-          <div className="header-actions">
-            <span className="username">@{user?.username}</span>
-            <button onClick={logout} className="logout-button">
-              Logout
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <div className="town-content">
+    <>
+      <Navigation />
+      <div className="town-page">
+        {/* Main Content */}
+        <div className="town-content">
         {/* Left Side - Shops */}
         <aside className="shops-panel">
           <BalancesDisplay balances={balances} />
@@ -166,5 +156,6 @@ export function TownPage() {
         </main>
       </div>
     </div>
+    </>
   );
 }

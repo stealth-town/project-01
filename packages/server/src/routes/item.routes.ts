@@ -159,26 +159,37 @@ router.get("/:itemId", async (req: Request, res: Response) => {
 
 /**
  * POST /api/items
- * Create a new item
+ * Create a new item (buy item pack for 100 tokens)
  */
 router.post("/", async (req: Request, res: Response) => {
   try {
-    const { characterId } = req.body;
+    const { characterId, userId } = req.body;
 
-    if (!characterId) {
+    if (!characterId || !userId) {
       return res.status(400).json({
         error: "Missing required fields",
-        message: "characterId, itemType, and damageContribution are required",
+        message: "characterId and userId are required",
       });
     }
 
-    const item = await itemService.createItem(
-      characterId
-    );
+    const item = await itemService.createItem(characterId, userId);
 
-    res.status(201).json({ item });
+    res.status(201).json({
+      item,
+      message: "Item purchased successfully for 100 tokens"
+    });
   } catch (error: any) {
     console.error("Create item error:", error);
+
+    if (error.message.includes("Insufficient tokens") ||
+        error.message.includes("Inventory is full") ||
+        error.message.includes("does not belong to user")) {
+      return res.status(400).json({
+        error: "Cannot purchase item",
+        message: error.message,
+      });
+    }
+
     res.status(500).json({
       error: "Failed to create item",
       message: error.message,
@@ -276,6 +287,44 @@ router.post("/unequip", async (req: Request, res: Response) => {
 
     res.status(500).json({
       error: "Failed to unequip item",
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * DELETE /api/items/:itemId
+ * Delete an item from inventory
+ */
+router.delete("/:itemId", async (req: Request, res: Response) => {
+  try {
+    const { itemId } = req.params;
+
+    if (!itemId) {
+      return res.status(400).json({
+        error: "Missing item ID",
+        message: "itemId is required",
+      });
+    }
+
+    const deletedItem = await itemService.deleteItem(itemId);
+
+    res.json({
+      message: "Item deleted successfully",
+      item: deletedItem
+    });
+  } catch (error: any) {
+    console.error("Delete item error:", error);
+
+    if (error.message.includes("not found")) {
+      return res.status(404).json({
+        error: "Item not found",
+        message: error.message,
+      });
+    }
+
+    res.status(500).json({
+      error: "Failed to delete item",
       message: error.message,
     });
   }
