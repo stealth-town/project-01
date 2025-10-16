@@ -138,6 +138,73 @@ export type Database = {
           },
         ]
       }
+      character_dungeons: {
+        Row: {
+          character_id: string
+          claimed_at: string | null
+          created_at: string
+          dungeon_run_id: string
+          finished_at: string | null
+          id: string
+          joined_at: string
+          starting_damage_rating: number
+          tokens_earned: number
+          total_damage_dealt: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          character_id: string
+          claimed_at?: string | null
+          created_at?: string
+          dungeon_run_id: string
+          finished_at?: string | null
+          id?: string
+          joined_at?: string
+          starting_damage_rating?: number
+          tokens_earned?: number
+          total_damage_dealt?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          character_id?: string
+          claimed_at?: string | null
+          created_at?: string
+          dungeon_run_id?: string
+          finished_at?: string | null
+          id?: string
+          joined_at?: string
+          starting_damage_rating?: number
+          tokens_earned?: number
+          total_damage_dealt?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_dungeons_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "character_dungeons_dungeon_run_id_fkey"
+            columns: ["dungeon_run_id"]
+            isOneToOne: false
+            referencedRelation: "dungeon_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "character_dungeons_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       characters: {
         Row: {
           created_at: string
@@ -170,62 +237,67 @@ export type Database = {
           },
         ]
       }
+      dungeon_events: {
+        Row: {
+          character_dungeon_id: string
+          created_at: string
+          damage_dealt: number
+          id: string
+        }
+        Insert: {
+          character_dungeon_id: string
+          created_at?: string
+          damage_dealt: number
+          id?: string
+        }
+        Update: {
+          character_dungeon_id?: string
+          created_at?: string
+          damage_dealt?: number
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dungeon_events_character_dungeon_id_fkey"
+            columns: ["character_dungeon_id"]
+            isOneToOne: false
+            referencedRelation: "character_dungeons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dungeon_runs: {
         Row: {
-          character_id: string
-          claimed_at: string | null
+          character_id: string | null
           created_at: string
           duration_seconds: number
           finished_at: string | null
           id: string
-          reward_amount: number | null
           started_at: string
-          starting_damage_rating: number
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
-          character_id: string
-          claimed_at?: string | null
+          character_id?: string | null
           created_at?: string
           duration_seconds: number
           finished_at?: string | null
           id?: string
-          reward_amount?: number | null
           started_at?: string
-          starting_damage_rating: number
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
-          character_id?: string
-          claimed_at?: string | null
+          character_id?: string | null
           created_at?: string
           duration_seconds?: number
           finished_at?: string | null
           id?: string
-          reward_amount?: number | null
           started_at?: string
-          starting_damage_rating?: number
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "dungeon_runs_character_id_fkey"
-            columns: ["character_id"]
-            isOneToOne: false
-            referencedRelation: "characters"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "dungeon_runs_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       energy_purchases: {
         Row: {

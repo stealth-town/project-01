@@ -3,6 +3,8 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { LoginPage } from './pages/LoginPage';
 import { TownPage } from './pages/TownPage';
+import { CharacterPage } from './pages/CharacterPage';
+import { DungeonPage } from './pages/DungeonPage';
 
 function App() {
   return (
@@ -15,6 +17,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <TownPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/character"
+            element={
+              <ProtectedRoute>
+                <CharacterPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dungeon"
+            element={
+              <ProtectedRoute>
+                <DungeonPage />
               </ProtectedRoute>
             }
           />

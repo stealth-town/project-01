@@ -1,165 +1,224 @@
-import type { Character, CharacterId, DungeonRunId, UserId } from "@stealth-town/shared/types";
+import type { CharacterId, UserId } from "@stealth-town/shared/types";
 import { UserRepo } from "../../repos/UserRepo.js";
 import { CharacterRepo } from "../../repos/CharacterRepo.js";
-import { DungeonRunsRepo, type DungeonRun } from "../../repos/DungeonRunsRepo.js";
+import { DungeonRunsRepo } from "../../repos/DungeonRunsRepo.js";
+import { CharacterDungeonRepo } from "../../repos/CharacterDungeonRepo.js";
+import { DungeonEventRepo } from "../../repos/DungeonEventRepo.js";
 
 export class DungeonService {
-    private userRepo: UserRepo;
-    private characterRepo: CharacterRepo;
-    private dungeonRunsRepo: DungeonRunsRepo;
+  private userRepo: UserRepo;
+  private characterRepo: CharacterRepo;
+  private dungeonRunsRepo: DungeonRunsRepo;
+  private characterDungeonRepo: CharacterDungeonRepo;
+  private dungeonEventRepo: DungeonEventRepo;
 
-    constructor() {
-        this.userRepo = new UserRepo();
-        this.characterRepo = new CharacterRepo();
-        this.dungeonRunsRepo = new DungeonRunsRepo();
+  constructor() {
+    this.userRepo = new UserRepo();
+    this.characterRepo = new CharacterRepo();
+    this.dungeonRunsRepo = new DungeonRunsRepo();
+    this.characterDungeonRepo = new CharacterDungeonRepo();
+    this.dungeonEventRepo = new DungeonEventRepo();
+  }
+
+  /**
+   * Get active character dungeon for a character
+   */
+  async getActiveCharacterDungeon(characterId: CharacterId) {
+    return await this.characterDungeonRepo.findActiveByCharacterId(characterId);
+  }
+
+  /**
+   * Get active dungeon with character dungeon data
+   */
+  async getActiveDungeonStatus(characterId: CharacterId) {
+    const characterDungeon = await this.characterDungeonRepo.findActiveByCharacterId(characterId);
+
+    if (!characterDungeon) {
+      return null;
     }
 
-    /**
-     * Get all unclaimed dungeon runs for a character
-     */
-    async getUnclaimedRuns(characterId: CharacterId): Promise<DungeonRun[]> {
-        // Verify character exists
-        const character = await this.characterRepo.findById(characterId);
-        if (!character) {
-            throw new Error("Character not found");
-        }
+    const dungeonRun = await this.dungeonRunsRepo.findById(characterDungeon.dungeon_run_id);
 
-        return await this.dungeonRunsRepo.findUnclaimedByCharacterId(characterId);
+    return {
+      characterDungeon,
+      dungeonRun,
+    };
+  }
+
+  /**
+   * Get unclaimed character dungeons for a character
+   */
+  async getUnclaimedDungeons(characterId: CharacterId) {
+    return await this.characterDungeonRepo.findUnclaimedByCharacterId(characterId);
+  }
+
+  /**
+   * Get all-time stats for a character
+   */
+  async getCharacterStats(characterId: CharacterId) {
+    const character = await this.characterRepo.findById(characterId);
+    if (!character) {
+      throw new Error("Character not found");
     }
 
-    /**
-     * Claim rewards for a specific dungeon run
-     */
-    async claimReward(
-        dungeonRunId: DungeonRunId,
-        userId: UserId
-    ): Promise<{ tokens: number; run: DungeonRun }> {
-        // Get the dungeon run
-        const run = await this.dungeonRunsRepo.findById(dungeonRunId);
-        if (!run) {
-            throw new Error("Dungeon run not found");
-        }
+    return await this.characterDungeonRepo.getCharacterStats(characterId);
+  }
 
-        // Validate ownership
-        if (run.user_id !== userId) {
-            throw new Error("Dungeon run does not belong to user");
-        }
+  /**
+   * Get dungeon events (combat log) for a character dungeon
+   */
+  async getDungeonEvents(characterDungeonId: string, limit?: number) {
+    if (limit) {
+      return await this.dungeonEventRepo.findRecentByCharacterDungeonId(characterDungeonId, limit);
+    }
+    return await this.dungeonEventRepo.findByCharacterDungeonId(characterDungeonId);
+  }
 
-        // Validate run is finished
-        if (!run.finished_at) {
-            throw new Error("Dungeon run is not yet finished");
-        }
+  /**
+   * Claim rewards for a character dungeon
+   */
+  async claimDungeonReward(characterDungeonId: string, userId: UserId) {
+    const characterDungeon = await this.characterDungeonRepo.findById(characterDungeonId);
 
-        // Validate run is not already claimed
-        if (run.claimed_at) {
-            throw new Error("Dungeon run rewards already claimed");
-        }
-
-        // Validate reward amount exists
-        if (run.reward_amount === null || run.reward_amount === undefined) {
-            throw new Error("No reward amount calculated for this run");
-        }
-
-        // Mark as claimed
-        const updatedRun = await this.dungeonRunsRepo.claim(dungeonRunId);
-
-        // Add tokens to user balance
-        await this.userRepo.addCurrency(userId, "tokens", run.reward_amount);
-
-        return {
-            tokens: run.reward_amount,
-            run: updatedRun,
-        };
+    if (!characterDungeon) {
+      throw new Error("Character dungeon not found");
     }
 
-    /**
-     * Claim rewards for all unclaimed dungeon runs for a character
-     */
-    async claimAllRewards(
-        characterId: CharacterId,
-        userId: UserId
-    ): Promise<{ totalTokens: number; claimedCount: number; runs: DungeonRun[] }> {
-        // Verify character belongs to user
-        const character = await this.characterRepo.findById(characterId);
-        if (!character) {
-            throw new Error("Character not found");
-        }
-        if (character.user_id !== userId) {
-            throw new Error("Character does not belong to user");
-        }
-
-        // Get all unclaimed runs
-        const unclaimedRuns = await this.dungeonRunsRepo.findUnclaimedByCharacterId(characterId);
-
-        if (unclaimedRuns.length === 0) {
-            return {
-                totalTokens: 0,
-                claimedCount: 0,
-                runs: [],
-            };
-        }
-
-        // Calculate total tokens
-        const totalTokens = unclaimedRuns.reduce(
-            (sum, run) => sum + (run.reward_amount || 0),
-            0
-        );
-
-        // Mark all as claimed
-        const dungeonRunIds = unclaimedRuns.map((run) => run.id);
-        const claimedRuns = await this.dungeonRunsRepo.claimMultiple(dungeonRunIds);
-
-        // Add tokens to user balance
-        await this.userRepo.addCurrency(userId, "tokens", totalTokens);
-
-        return {
-            totalTokens,
-            claimedCount: claimedRuns.length,
-            runs: claimedRuns,
-        };
+    // Validate ownership
+    if (characterDungeon.user_id !== userId) {
+      throw new Error("Character dungeon does not belong to user");
     }
 
-    /**
-     * Get dungeon run by ID
-     */
-    async getDungeonRun(dungeonRunId: DungeonRunId): Promise<DungeonRun> {
-        const run = await this.dungeonRunsRepo.findById(dungeonRunId);
-        if (!run) {
-            throw new Error("Dungeon run not found");
-        }
-        return run;
+    // Validate it's finished
+    if (!characterDungeon.finished_at) {
+      throw new Error("Character dungeon is not yet finished");
     }
 
-    /**
-     * Get all dungeon runs for a character
-     */
-    async getCharacterRuns(characterId: CharacterId): Promise<DungeonRun[]> {
-        const character = await this.characterRepo.findById(characterId);
-        if (!character) {
-            throw new Error("Character not found");
-        }
-
-        return await this.dungeonRunsRepo.findByCharacterId(characterId);
+    // Validate not already claimed
+    if (characterDungeon.claimed_at) {
+      throw new Error("Character dungeon rewards already claimed");
     }
 
-    async createDungeonRunIfNeeded(characterId: CharacterId) {
-        const character = await this.characterRepo.findById(characterId);
-        if (!character) {
-            throw new Error("Character not found");
-        }
+    // Mark as claimed
+    const updated = await this.characterDungeonRepo.claim(characterDungeonId);
 
-        const runs = await this.dungeonRunsRepo.findByCharacterId(characterId);
-        if (runs.length > 0) {
-            return;
-        }
+    // Add tokens to user
+    await this.userRepo.addCurrency(userId, "tokens", characterDungeon.tokens_earned);
 
-        await this.dungeonRunsRepo.create({
-            character_id: characterId,
-            user_id: character.user_id,
-            started_at: new Date().toISOString(),
-            duration_seconds: 10, // needs to be moved to env
-            starting_damage_rating: character.damage_rating,
-        });
+    return {
+      tokens: characterDungeon.tokens_earned,
+      characterDungeon: updated,
+    };
+  }
+
+  /**
+   * Claim all unclaimed rewards for a character
+   */
+  async claimAllRewards(characterId: CharacterId, userId: UserId) {
+    // Verify character belongs to user
+    const character = await this.characterRepo.findById(characterId);
+    if (!character) {
+      throw new Error("Character not found");
     }
+    if (character.user_id !== userId) {
+      throw new Error("Character does not belong to user");
+    }
+
+    // Get all unclaimed character dungeons
+    const unclaimedDungeons = await this.characterDungeonRepo.findUnclaimedByCharacterId(characterId);
+
+    if (unclaimedDungeons.length === 0) {
+      return {
+        totalTokens: 0,
+        claimedCount: 0,
+        dungeons: [],
+      };
+    }
+
+    // Calculate total tokens
+    const totalTokens = unclaimedDungeons.reduce((sum, cd) => sum + cd.tokens_earned, 0);
+
+    // Claim all
+    const claimed = await Promise.all(
+      unclaimedDungeons.map((cd) => this.characterDungeonRepo.claim(cd.id))
+    );
+
+    // Add tokens to user
+    await this.userRepo.addCurrency(userId, "tokens", totalTokens);
+
+    return {
+      totalTokens,
+      claimedCount: claimed.length,
+      dungeons: claimed,
+    };
+  }
+
+  /**
+   * Create a character dungeon entry for a character in a dungeon run
+   * Called by dungeon worker when enrolling characters
+   */
+  async enrollCharacterInDungeon(characterId: CharacterId, dungeonRunId: string) {
+    const character = await this.characterRepo.findById(characterId);
+    if (!character) {
+      throw new Error("Character not found");
+    }
+
+    // Don't enroll characters with 0 damage rating
+    if (character.damage_rating <= 0) {
+      return null;
+    }
+
+    // Check if already enrolled
+    const existing = await this.characterDungeonRepo.findActiveByCharacterId(characterId);
+    if (existing) {
+      return existing;
+    }
+
+    return await this.characterDungeonRepo.create({
+      character_id: characterId,
+      dungeon_run_id: dungeonRunId,
+      user_id: character.user_id,
+      starting_damage_rating: character.damage_rating,
+    });
+  }
+
+  /**
+   * Record a hit for a character dungeon
+   * Called by dungeon worker every 5 seconds
+   */
+  async recordHit(characterDungeonId: string, damage: number) {
+    // Create event
+    await this.dungeonEventRepo.create({
+      character_dungeon_id: characterDungeonId,
+      damage_dealt: damage,
+    });
+
+    // Update character dungeon totals
+    return await this.characterDungeonRepo.incrementDamage(characterDungeonId, damage);
+  }
+
+  /**
+   * Finish a character dungeon
+   * Called by dungeon worker when dungeon ends
+   */
+  async finishCharacterDungeon(characterDungeonId: string) {
+    return await this.characterDungeonRepo.finish(characterDungeonId);
+  }
+
+  /**
+   * Get all active character dungeons
+   * Used by dungeon worker to process hits
+   */
+  async getAllActiveCharacterDungeons() {
+    return await this.characterDungeonRepo.findAllActive();
+  }
+
+  // DEPRECATED: Old methods for backward compatibility with existing code
+  // These will be removed once worker is updated
+
+  async createDungeonRunIfNeeded(characterId: CharacterId) {
+    // This method is now handled by the dungeon worker
+    // Keeping for backward compatibility
+    console.warn("createDungeonRunIfNeeded is deprecated and does nothing");
+  }
 }
-

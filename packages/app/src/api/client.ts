@@ -92,6 +92,117 @@ class ApiClient {
   async getUserTrades(userId: string) {
     return this.request<Trade[]>(`/town/trades/${userId}`);
   }
+
+  // Character endpoints
+  async getCharacterByUserId(userId: string) {
+    return this.request<{ character: any }>(`/characters/user/${userId}`);
+  }
+
+  async createCharacter(userId: string) {
+    return this.request<{ character: any }>('/characters/generate', {
+      method: 'POST',
+      body: JSON.stringify({ userId }),
+    });
+  }
+
+  // Item endpoints
+  async getCharacterItems(characterId: string) {
+    return this.request<{ items: any[] }>(`/items/character/${characterId}`);
+  }
+
+  async getEquipmentSummary(characterId: string) {
+    return this.request<{
+      equippedItems: any[];
+      totalDamageContribution: number;
+      totalItemCount: number;
+      equippedCount: number;
+      availableSlots: number;
+    }>(`/items/character/${characterId}/summary`);
+  }
+
+  async buyItem(characterId: string, userId: string) {
+    return this.request<{ item: any; message: string }>('/items', {
+      method: 'POST',
+      body: JSON.stringify({ characterId, userId }),
+    });
+  }
+
+  async equipItem(itemId: string, slot: number) {
+    return this.request<{ item: any }>('/items/equip', {
+      method: 'POST',
+      body: JSON.stringify({ itemId, slot }),
+    });
+  }
+
+  async unequipItem(itemId: string) {
+    return this.request<{ item: any }>('/items/unequip', {
+      method: 'POST',
+      body: JSON.stringify({ itemId }),
+    });
+  }
+
+  async deleteItem(itemId: string) {
+    return this.request<{ message: string; item: any }>(`/items/${itemId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Dungeon endpoints
+  async getActiveDungeonStatus(characterId: string) {
+    return this.request<{
+      active: boolean;
+      characterDungeon: any;
+      dungeonRun: any;
+    }>(`/dungeon/character/${characterId}/active`);
+  }
+
+  async getUnclaimedDungeons(characterId: string) {
+    return this.request<{
+      dungeons: any[];
+      count: number;
+    }>(`/dungeon/character/${characterId}/unclaimed`);
+  }
+
+  async getCharacterDungeonStats(characterId: string) {
+    return this.request<{
+      totalDamage: number;
+      totalTokens: number;
+      totalRuns: number;
+    }>(`/dungeon/character/${characterId}/stats`);
+  }
+
+  async getDungeonEvents(characterDungeonId: string, limit?: number) {
+    const url = limit
+      ? `/dungeon/events/${characterDungeonId}?limit=${limit}`
+      : `/dungeon/events/${characterDungeonId}`;
+    return this.request<{
+      events: any[];
+      count: number;
+    }>(url);
+  }
+
+  async claimDungeonReward(characterDungeonId: string, userId: string) {
+    return this.request<{
+      message: string;
+      tokensAwarded: number;
+      characterDungeon: any;
+    }>('/dungeon/claim', {
+      method: 'POST',
+      body: JSON.stringify({ characterDungeonId, userId }),
+    });
+  }
+
+  async claimAllDungeonRewards(characterId: string, userId: string) {
+    return this.request<{
+      message: string;
+      totalTokens: number;
+      claimedCount: number;
+      dungeons: any[];
+    }>('/dungeon/claim-all', {
+      method: 'POST',
+      body: JSON.stringify({ characterId, userId }),
+    });
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);

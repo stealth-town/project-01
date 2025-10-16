@@ -1,7 +1,8 @@
-import type { ItemId, CharacterId, ItemType } from "@stealth-town/shared/types";
+import type { ItemId, CharacterId, ItemType, UserId } from "@stealth-town/shared/types";
 import { ItemRepo, type ItemData } from "../../repos/ItemRepo.js";
 import { CharacterService } from "../character/CharacterService.js";
 import { DungeonService } from "../dungeon/DungeonService.js";
+import { UserRepo } from "../../repos/UserRepo.js";
 
 export interface EquipItemRequest {
   itemId: ItemId;
@@ -12,11 +13,13 @@ export class ItemService {
   private itemRepo: ItemRepo;
   private characterService: CharacterService;
   private dungeonService: DungeonService;
+  private userRepo: UserRepo;
 
   constructor() {
     this.itemRepo = new ItemRepo();
     this.characterService = new CharacterService();
     this.dungeonService = new DungeonService();
+    this.userRepo = new UserRepo();
   }
 
   /**
@@ -58,13 +61,38 @@ export class ItemService {
   }
 
   /**
-   * Create a new item for a character
+   * Create a new item for a character (buy item pack)
+   * Costs 100 tokens per item
    */
-  async createItem(character_id: CharacterId) {
+  async createItem(character_id: CharacterId, user_id: UserId) {
+    const ITEM_COST = 100; // tokens
+
+    // Check if character belongs to user
+    const character = await this.characterService.getCharacter(character_id);
+    if (character.user_id !== user_id) {
+      throw new Error("Character does not belong to user");
+    }
+
+    // Check inventory limit (max 20 items)
+    const itemCount = await this.itemRepo.countByCharacterId(character_id);
+    if (itemCount >= 20) {
+      throw new Error("Inventory is full (maximum 20 items)");
+    }
+
+    // Check token balance
+    const user = await this.userRepo.findById(user_id);
+    if (user.tokens < ITEM_COST) {
+      throw new Error(`Insufficient tokens: required ${ITEM_COST}, available ${user.tokens}`);
+    }
+
+    // Deduct tokens
+    await this.userRepo.deductCurrency(user_id, "tokens", ITEM_COST);
+
+    // Create item
     const itemData: ItemData = {
       character_id: character_id,
       item_type: this.getRandomItemType(),
-      damage_contribution: Math.floor(Math.random() * 100),
+      damage_contribution: Math.floor(Math.random() * 100) + 1, // 1-100 damage
       is_equipped: false,
     };
 
@@ -148,5 +176,26 @@ export class ItemService {
       equippedCount: equippedItems.length,
       availableSlots: 6 - equippedItems.length,
     };
+  }
+
+  /**
+   * Delete an item from inventory
+   */
+  async deleteItem(itemId: ItemId) {
+    const item = await this.itemRepo.findById(itemId);
+    if (!item) {
+      throw new Error("Item not found");
+    }
+
+    // If equipped, update character's damage rating first
+    if (item.is_equipped) {
+      await this.characterService.updateDamageRating(
+        item.character_id,
+        item.damage_contribution,
+        false // subtract damage
+      );
+    }
+
+    return await this.itemRepo.delete(itemId);
   }
 }
