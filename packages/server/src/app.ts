@@ -12,7 +12,14 @@ import express, {
 const app: Express = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: [
+    'https://comfy-empanada-d6bb17.netlify.app',
+    'http://localhost:5173', // For local development
+    'http://localhost:3000'  // For local development
+  ],
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
