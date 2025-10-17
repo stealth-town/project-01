@@ -41,6 +41,15 @@ export function CharacterPage() {
   const [error, setError] = useState('');
   const [itemToEquip, setItemToEquip] = useState<string | null>(null);
 
+  // Gacha state
+  const [showGachaConfirm, setShowGachaConfirm] = useState(false);
+  const [showGachaSelection, setShowGachaSelection] = useState(false);
+  const [showGachaReveal, setShowGachaReveal] = useState(false);
+  const [offeredItems, setOfferedItems] = useState<any[]>([]);
+  const [selectedCardIndex, setSelectedCardIndex] = useState<number | null>(null);
+  const [revealedItem, setRevealedItem] = useState<any>(null);
+  const [showOtherCards, setShowOtherCards] = useState(false);
+
   const loadCharacterData = async () => {
     if (!user?.id) return;
 
@@ -75,15 +84,60 @@ export function CharacterPage() {
     loadCharacterData();
   }, [user]);
 
-  const handleBuyItem = async () => {
+  const handleBuyItem = () => {
+    setShowGachaConfirm(true);
+  };
+
+  const handleConfirmBuy = async () => {
     if (!character || !user) return;
 
     try {
-      await apiClient.buyItem(character.id, user.id);
-      await loadCharacterData(); // Refresh data
+      setShowGachaConfirm(false);
+      const response = await apiClient.initiateGacha(character.id, user.id);
+      setOfferedItems(response.offeredItems);
+      setShowGachaSelection(true);
+      setSelectedCardIndex(null);
     } catch (err: any) {
-      alert(err.message || 'Failed to buy item');
+      alert(err.message || 'Failed to initiate gacha');
     }
+  };
+
+  const handleCancelBuy = () => {
+    setShowGachaConfirm(false);
+  };
+
+  const handleCardSelect = (index: number) => {
+    setSelectedCardIndex(index);
+  };
+
+  const handleConfirmSelection = async () => {
+    if (selectedCardIndex === null || !character || !user) return;
+
+    try {
+      const response = await apiClient.confirmGacha(character.id, user.id, selectedCardIndex, offeredItems);
+      setRevealedItem(response.allOfferedItems[selectedCardIndex]);
+      setShowGachaSelection(false);
+      setShowGachaReveal(true);
+      setShowOtherCards(false);
+    } catch (err: any) {
+      alert(err.message || 'Failed to confirm selection');
+      setShowGachaSelection(false);
+      setOfferedItems([]);
+      setSelectedCardIndex(null);
+    }
+  };
+
+  const handleShowOtherCards = () => {
+    setShowOtherCards(true);
+  };
+
+  const handleCollect = async () => {
+    setShowGachaReveal(false);
+    setRevealedItem(null);
+    setOfferedItems([]);
+    setSelectedCardIndex(null);
+    setShowOtherCards(false);
+    await loadCharacterData();
   };
 
   const handleEquipItem = async (itemId: string, slot: number) => {
@@ -118,6 +172,52 @@ export function CharacterPage() {
 
   const openEquipModal = (itemId: string) => {
     setItemToEquip(itemId);
+  };
+
+  const getRarityColor = (rarity: string) => {
+    switch (rarity) {
+      case 'common': return '#4CAF50'; // Green
+      case 'rare': return '#2196F3'; // Blue
+      case 'epic': return '#9C27B0'; // Purple
+      case 'legendary': return '#FF9800'; // Orange
+      default: return '#4CAF50';
+    }
+  };
+
+  const getSlotName = (slot: number) => {
+    switch (slot) {
+      case 1: return 'Helmet';
+      case 2: return 'Main Weapon';
+      case 3: return 'Off-Hand';
+      case 4: return 'Boots';
+      case 5: return 'Trinket';
+      case 6: return 'Armor';
+      default: return `Slot ${slot}`;
+    }
+  };
+
+  const getSlotCategory = (slot: number) => {
+    switch (slot) {
+      case 1: return 'helmet';
+      case 2: return 'weapon1';
+      case 3: return 'weapon2';
+      case 4: return 'boots';
+      case 5: return 'trinket';
+      case 6: return 'armor';
+      default: return null;
+    }
+  };
+
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'helmet': return '⛑️';
+      case 'weapon1': return '⚔️';
+      case 'weapon2': return '🗡️';
+      case 'boots': return '👢';
+      case 'trinket': return '💍';
+      case 'armor': return '🛡️';
+      default: return '❓';
+    }
   };
 
   if (isLoading) {
@@ -222,50 +322,87 @@ export function CharacterPage() {
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: '0.5rem',
+              gap: '0.75rem',
             }}>
               {[1, 2, 3, 4, 5, 6].map(slot => {
                 const equippedItem = equipmentSummary?.equippedItems.find(
                   item => item.equipped_slot === slot
                 );
+                const concreteItem = equippedItem?.concrete_items;
                 return (
                   <div
                     key={slot}
                     style={{
-                      border: '1px solid #444',
-                      borderRadius: '4px',
-                      padding: '0.5rem',
+                      border: equippedItem ? `2px solid ${getRarityColor(equippedItem.rarity)}` : '2px solid #444',
+                      borderRadius: '8px',
+                      padding: '0.75rem',
                       backgroundColor: equippedItem ? '#2a2a2a' : '#1a1a1a',
-                      minHeight: '80px',
+                      minHeight: '120px',
+                      position: 'relative',
                     }}
                   >
-                    <div style={{ fontSize: '12px', color: '#888' }}>Slot {slot}</div>
-                    {equippedItem ? (
+                    <div style={{
+                      fontSize: '11px',
+                      color: '#888',
+                      fontWeight: 'bold',
+                      textTransform: 'uppercase',
+                      marginBottom: '0.5rem',
+                    }}>
+                      {getSlotName(slot)}
+                    </div>
+                    {equippedItem && concreteItem ? (
                       <>
-                        <div style={{ fontSize: '14px', marginTop: '0.25rem' }}>
-                          {equippedItem.item_type}
+                        <div style={{
+                          fontSize: '20px',
+                          textAlign: 'center',
+                          marginBottom: '0.5rem',
+                        }}>
+                          {getCategoryIcon(concreteItem.category)}
                         </div>
-                        <div style={{ fontSize: '12px', color: '#4CAF50' }}>
+                        <div style={{
+                          fontSize: '13px',
+                          marginBottom: '0.25rem',
+                          fontWeight: 'bold',
+                          color: '#fff',
+                        }}>
+                          {concreteItem.item_name}
+                        </div>
+                        <div style={{
+                          fontSize: '10px',
+                          color: getRarityColor(equippedItem.rarity),
+                          fontWeight: 'bold',
+                          textTransform: 'uppercase',
+                          marginBottom: '0.5rem',
+                        }}>
+                          {equippedItem.rarity}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#4CAF50', marginBottom: '0.5rem' }}>
                           +{equippedItem.damage_contribution} DMG
                         </div>
                         <button
                           onClick={() => handleUnequipItem(equippedItem.id)}
                           style={{
-                            marginTop: '0.5rem',
-                            padding: '0.25rem 0.5rem',
+                            width: '100%',
+                            padding: '0.4rem',
                             fontSize: '11px',
                             backgroundColor: '#f44336',
                             color: '#fff',
                             border: 'none',
                             borderRadius: '4px',
                             cursor: 'pointer',
+                            fontWeight: 'bold',
                           }}
                         >
                           Unequip
                         </button>
                       </>
                     ) : (
-                      <div style={{ fontSize: '12px', color: '#666', marginTop: '0.5rem' }}>
+                      <div style={{
+                        fontSize: '11px',
+                        color: '#666',
+                        textAlign: 'center',
+                        marginTop: '1.5rem',
+                      }}>
                         Empty
                       </div>
                     )}
@@ -297,55 +434,90 @@ export function CharacterPage() {
                   No items in inventory. Buy item packs to get items!
                 </p>
               ) : (
-                unequippedItems.map(item => (
-                  <div
-                    key={item.id}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      padding: '0.75rem',
-                      border: '1px solid #444',
-                      borderRadius: '4px',
-                      backgroundColor: '#2a2a2a',
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontWeight: 'bold' }}>{item.item_type}</div>
-                      <div style={{ fontSize: '14px', color: '#4CAF50' }}>
-                        +{item.damage_contribution} DMG
+                unequippedItems.map(item => {
+                  const concreteItem = item.concrete_items;
+                  return (
+                    <div
+                      key={item.id}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '1rem',
+                        border: `2px solid ${getRarityColor(item.rarity)}`,
+                        borderRadius: '8px',
+                        backgroundColor: '#2a2a2a',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
+                        <div style={{ fontSize: '32px' }}>
+                          {concreteItem ? getCategoryIcon(concreteItem.category) : '❓'}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{
+                            fontWeight: 'bold',
+                            fontSize: '15px',
+                            marginBottom: '0.25rem',
+                          }}>
+                            {concreteItem?.item_name || 'Unknown Item'}
+                          </div>
+                          <div style={{
+                            fontSize: '11px',
+                            color: getRarityColor(item.rarity),
+                            fontWeight: 'bold',
+                            textTransform: 'uppercase',
+                            marginBottom: '0.25rem',
+                          }}>
+                            {item.rarity}
+                          </div>
+                          <div style={{
+                            fontSize: '11px',
+                            color: '#888',
+                            textTransform: 'capitalize',
+                            marginBottom: '0.25rem',
+                          }}>
+                            {concreteItem?.category || 'Unknown'}
+                          </div>
+                          <div style={{ fontSize: '14px', color: '#4CAF50', fontWeight: 'bold' }}>
+                            +{item.damage_contribution} DMG
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.5rem', flexDirection: 'column' }}>
+                        <button
+                          onClick={() => openEquipModal(item.id)}
+                          style={{
+                            padding: '0.5rem 1.5rem',
+                            backgroundColor: '#2196F3',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontWeight: 'bold',
+                            fontSize: '12px',
+                          }}
+                        >
+                          Equip
+                        </button>
+                        <button
+                          onClick={() => handleDeleteItem(item.id)}
+                          style={{
+                            padding: '0.5rem 1.5rem',
+                            backgroundColor: '#f44336',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontWeight: 'bold',
+                            fontSize: '12px',
+                          }}
+                        >
+                          Delete
+                        </button>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button
-                        onClick={() => openEquipModal(item.id)}
-                        style={{
-                          padding: '0.5rem 1rem',
-                          backgroundColor: '#2196F3',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        Equip
-                      </button>
-                      <button
-                        onClick={() => handleDeleteItem(item.id)}
-                        style={{
-                          padding: '0.5rem 1rem',
-                          backgroundColor: '#f44336',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
@@ -390,7 +562,119 @@ export function CharacterPage() {
       </div>
 
       {/* Equip Modal */}
-      {itemToEquip && (
+      {itemToEquip && (() => {
+        const selectedItem = items.find(i => i.id === itemToEquip);
+        const selectedConcreteItem = selectedItem?.concrete_items;
+        return (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}>
+            <div style={{
+              backgroundColor: '#1a1a1a',
+              border: '2px solid #333',
+              borderRadius: '8px',
+              padding: '2rem',
+              maxWidth: '500px',
+            }}>
+              <h3 style={{ margin: '0 0 0.5rem 0' }}>Equip Item</h3>
+              {selectedItem && selectedConcreteItem && (
+                <div style={{
+                  padding: '1rem',
+                  backgroundColor: '#2a2a2a',
+                  border: `2px solid ${getRarityColor(selectedItem.rarity)}`,
+                  borderRadius: '8px',
+                  marginBottom: '1.5rem',
+                  textAlign: 'center',
+                }}>
+                  <div style={{ fontSize: '40px', marginBottom: '0.5rem' }}>
+                    {getCategoryIcon(selectedConcreteItem.category)}
+                  </div>
+                  <div style={{ fontWeight: 'bold', fontSize: '16px', marginBottom: '0.25rem' }}>
+                    {selectedConcreteItem.item_name}
+                  </div>
+                  <div style={{
+                    fontSize: '12px',
+                    color: getRarityColor(selectedItem.rarity),
+                    fontWeight: 'bold',
+                    textTransform: 'uppercase',
+                  }}>
+                    {selectedItem.rarity}
+                  </div>
+                </div>
+              )}
+              <h4 style={{ margin: '0 0 1rem 0', fontSize: '14px', color: '#888' }}>
+                Select Equipment Slot
+              </h4>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: '0.75rem',
+                marginBottom: '1rem',
+              }}>
+                {[1, 2, 3, 4, 5, 6].map(slot => {
+                  const occupied = equipmentSummary?.equippedItems.some(
+                    item => item.equipped_slot === slot
+                  );
+                  const slotCategory = getSlotCategory(slot);
+                  const itemCategory = selectedConcreteItem?.category;
+                  const canEquip = slotCategory === itemCategory;
+                  const isDisabled = occupied || !canEquip;
+
+                  return (
+                    <button
+                      key={slot}
+                      onClick={() => canEquip && !occupied && handleEquipItem(itemToEquip, slot)}
+                      disabled={isDisabled}
+                      style={{
+                        padding: '0.75rem',
+                        backgroundColor: isDisabled ? '#444' : '#4CAF50',
+                        color: isDisabled ? '#888' : '#fff',
+                        border: canEquip ? '2px solid #4CAF50' : '2px solid #666',
+                        borderRadius: '6px',
+                        cursor: isDisabled ? 'not-allowed' : 'pointer',
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        opacity: isDisabled ? 0.5 : 1,
+                      }}
+                    >
+                      <div style={{ marginBottom: '0.25rem' }}>{getSlotName(slot)}</div>
+                      {occupied && <div style={{ fontSize: '9px' }}>(Occupied)</div>}
+                      {!canEquip && !occupied && <div style={{ fontSize: '9px' }}>(Wrong Type)</div>}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                onClick={() => setItemToEquip(null)}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  backgroundColor: '#f44336',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Gacha Confirmation Modal */}
+      {showGachaConfirm && (
         <div style={{
           position: 'fixed',
           top: 0,
@@ -409,51 +693,290 @@ export function CharacterPage() {
             borderRadius: '8px',
             padding: '2rem',
             maxWidth: '400px',
+            textAlign: 'center',
           }}>
-            <h3 style={{ margin: '0 0 1rem 0' }}>Select Equipment Slot</h3>
+            <h3 style={{ margin: '0 0 1rem 0' }}>Purchase Item Pack?</h3>
+            <p style={{ marginBottom: '2rem', color: '#ccc' }}>
+              This will cost 100 tokens. You will receive one random item.
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+              <button
+                onClick={handleConfirmBuy}
+                style={{
+                  padding: '0.75rem 2rem',
+                  backgroundColor: '#4CAF50',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                }}
+              >
+                Yes
+              </button>
+              <button
+                onClick={handleCancelBuy}
+                style={{
+                  padding: '0.75rem 2rem',
+                  backgroundColor: '#f44336',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                }}
+              >
+                No
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Gacha Card Selection Modal */}
+      {showGachaSelection && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+        }}>
+          <h2 style={{ marginBottom: '2rem', color: '#fff' }}>Select Your Card</h2>
+          <div style={{
+            display: 'flex',
+            gap: '2rem',
+            marginBottom: '2rem',
+          }}>
+            {[0, 1, 2].map((index) => (
+              <div
+                key={index}
+                onClick={() => handleCardSelect(index)}
+                style={{
+                  width: '200px',
+                  height: '280px',
+                  backgroundColor: selectedCardIndex === index ? '#4CAF50' : '#2a2a2a',
+                  border: selectedCardIndex === index ? '3px solid #4CAF50' : '2px solid #444',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '64px',
+                  transition: 'all 0.3s ease',
+                  transform: selectedCardIndex === index ? 'scale(1.05)' : 'scale(1)',
+                  boxShadow: selectedCardIndex === index ? '0 0 20px rgba(76, 175, 80, 0.5)' : 'none',
+                }}
+              >
+                ?
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={handleConfirmSelection}
+            disabled={selectedCardIndex === null}
+            style={{
+              padding: '1rem 3rem',
+              backgroundColor: selectedCardIndex !== null ? '#4CAF50' : '#666',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: selectedCardIndex !== null ? 'pointer' : 'not-allowed',
+              fontSize: '18px',
+              fontWeight: 'bold',
+            }}
+          >
+            Confirm
+          </button>
+        </div>
+      )}
+
+      {/* Gacha Reveal Modal */}
+      {showGachaReveal && revealedItem && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+        }}>
+          <h2 style={{ marginBottom: '2rem', color: '#fff' }}>You Received!</h2>
+
+          {/* Revealed Card */}
+          <div style={{
+            width: '250px',
+            minHeight: '350px',
+            backgroundColor: '#2a2a2a',
+            border: `3px solid ${getRarityColor(revealedItem.rarity)}`,
+            borderRadius: '12px',
+            padding: '1.5rem',
+            marginBottom: '2rem',
+            boxShadow: `0 0 30px ${getRarityColor(revealedItem.rarity)}80`,
+          }}>
             <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: '0.5rem',
+              fontSize: '64px',
+              textAlign: 'center',
               marginBottom: '1rem',
             }}>
-              {[1, 2, 3, 4, 5, 6].map(slot => {
-                const occupied = equipmentSummary?.equippedItems.some(
-                  item => item.equipped_slot === slot
-                );
-                return (
-                  <button
-                    key={slot}
-                    onClick={() => handleEquipItem(itemToEquip, slot)}
-                    disabled={occupied}
-                    style={{
-                      padding: '1rem',
-                      backgroundColor: occupied ? '#666' : '#4CAF50',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: occupied ? 'not-allowed' : 'pointer',
-                    }}
-                  >
-                    Slot {slot}
-                    {occupied && <div style={{ fontSize: '10px' }}>(Occupied)</div>}
-                  </button>
-                );
-              })}
+              {getCategoryIcon(revealedItem.item.category)}
             </div>
+            <div style={{
+              textAlign: 'center',
+              marginBottom: '1rem',
+            }}>
+              <div style={{
+                fontSize: '18px',
+                fontWeight: 'bold',
+                marginBottom: '0.5rem',
+                color: '#fff',
+              }}>
+                {revealedItem.item.item_name}
+              </div>
+              <div style={{
+                fontSize: '14px',
+                color: getRarityColor(revealedItem.rarity),
+                fontWeight: 'bold',
+                textTransform: 'uppercase',
+                marginBottom: '0.5rem',
+              }}>
+                {revealedItem.rarity}
+              </div>
+              <div style={{
+                fontSize: '12px',
+                color: '#888',
+                textTransform: 'capitalize',
+                marginBottom: '1rem',
+              }}>
+                {revealedItem.item.category}
+              </div>
+              <div style={{
+                fontSize: '24px',
+                color: '#4CAF50',
+                fontWeight: 'bold',
+              }}>
+                {revealedItem.item.dmg * (
+                  revealedItem.rarity === 'common' ? 1 :
+                  revealedItem.rarity === 'rare' ? 1.2 :
+                  revealedItem.rarity === 'epic' ? 1.5 : 2
+                )} DMG
+              </div>
+            </div>
+          </div>
+
+          {/* Other Cards */}
+          {showOtherCards && (
+            <div style={{
+              display: 'flex',
+              gap: '1rem',
+              marginBottom: '2rem',
+            }}>
+              {offeredItems.filter((_, idx) => idx !== selectedCardIndex).map((item, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    width: '180px',
+                    minHeight: '250px',
+                    backgroundColor: '#2a2a2a',
+                    border: `2px solid ${getRarityColor(item.rarity)}`,
+                    borderRadius: '8px',
+                    padding: '1rem',
+                    opacity: 0.7,
+                  }}
+                >
+                  <div style={{
+                    fontSize: '48px',
+                    textAlign: 'center',
+                    marginBottom: '0.5rem',
+                  }}>
+                    {getCategoryIcon(item.item.category)}
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{
+                      fontSize: '14px',
+                      fontWeight: 'bold',
+                      marginBottom: '0.25rem',
+                      color: '#fff',
+                    }}>
+                      {item.item.item_name}
+                    </div>
+                    <div style={{
+                      fontSize: '12px',
+                      color: getRarityColor(item.rarity),
+                      fontWeight: 'bold',
+                      textTransform: 'uppercase',
+                      marginBottom: '0.25rem',
+                    }}>
+                      {item.rarity}
+                    </div>
+                    <div style={{
+                      fontSize: '10px',
+                      color: '#888',
+                      textTransform: 'capitalize',
+                      marginBottom: '0.5rem',
+                    }}>
+                      {item.item.category}
+                    </div>
+                    <div style={{
+                      fontSize: '18px',
+                      color: '#4CAF50',
+                      fontWeight: 'bold',
+                    }}>
+                      {item.item.dmg * (
+                        item.rarity === 'common' ? 1 :
+                        item.rarity === 'rare' ? 1.2 :
+                        item.rarity === 'epic' ? 1.5 : 2
+                      )} DMG
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            {!showOtherCards && (
+              <button
+                onClick={handleShowOtherCards}
+                style={{
+                  padding: '0.75rem 2rem',
+                  backgroundColor: '#2196F3',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                }}
+              >
+                Show Other Cards
+              </button>
+            )}
             <button
-              onClick={() => setItemToEquip(null)}
+              onClick={handleCollect}
               style={{
-                width: '100%',
-                padding: '0.75rem',
-                backgroundColor: '#f44336',
+                padding: '0.75rem 2rem',
+                backgroundColor: '#4CAF50',
                 color: '#fff',
                 border: 'none',
-                borderRadius: '4px',
+                borderRadius: '8px',
                 cursor: 'pointer',
+                fontSize: '16px',
+                fontWeight: 'bold',
               }}
             >
-              Cancel
+              Collect
             </button>
           </div>
         </div>

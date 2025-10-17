@@ -1,1 +1,61 @@
-# Empty as of now
+version: '3.8'
+
+services:
+  # API Server
+  server:
+    build:
+      context: ..
+      dockerfile: ./packages/server/Dockerfile
+    container_name: unfuck-server
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - SUPABASE_API_URL=${SUPABASE_API_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+    networks:
+      - unfuck-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Trade Engine Worker
+  trade-engine:
+    build:
+      context: ..
+      dockerfile: ./packages/workers/trade-engine/Dockerfile
+    container_name: unfuck-trade-engine
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - SUPABASE_API_URL=${SUPABASE_API_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+    networks:
+      - unfuck-network
+    depends_on:
+      - server
+
+  # Dungeon Runtime Worker
+  dungeon-runtime:
+    build:
+      context: ..
+      dockerfile: ./packages/workers/dungeon-runtime/Dockerfile
+    container_name: unfuck-dungeon-runtime
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - SUPABASE_API_URL=${SUPABASE_API_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+    networks:
+      - unfuck-network
+    depends_on:
+      - server
+
+networks:
+  unfuck-network:
+    driver: bridge

@@ -84,10 +84,9 @@ export class ItemService {
   }
 
   /**
-   * Create a new item for a character (buy item pack)
-   * Costs 100 tokens per item
+   * Initiate gacha - generate 3 random items for selection (doesn't create item yet)
    */
-  async createItem(character_id: CharacterId, user_id: UserId, choice: number) {
+  async initiateGacha(character_id: CharacterId, user_id: UserId): Promise<ItemWithRarity[]> {
     const ITEM_COST = 100; // tokens
 
     // Check if character belongs to user
@@ -96,7 +95,7 @@ export class ItemService {
       throw new Error("Character does not belong to user");
     }
 
-    // Check inventory limit (max 20 items)
+    // Check inventory limit (max 20 unequipped items)
     const itemCount = await this.itemRepo.countByCharacterId(character_id);
     if (itemCount >= 20) {
       throw new Error("Inventory is full (maximum 20 items)");
@@ -104,13 +103,11 @@ export class ItemService {
 
     // Check token balance
     const user = await this.userRepo.findById(user_id);
-    // if (user.tokens < ITEM_COST) {
-    //   throw new Error(`Insufficient tokens: required ${ITEM_COST}, available ${user.tokens}`);
-    // }
+    if (!user || user.tokens < ITEM_COST) {
+      throw new Error(`Insufficient tokens: required ${ITEM_COST}, available ${user?.tokens || 0}`);
+    }
 
-    // Deduct tokens
-    // await this.userRepo.deductCurrency(user_id, "tokens", ITEM_COST);
-
+    // Generate 3 random items for selection
     const concreteItems: ItemWithRarity[] = [];
     for (let i = 0; i < 3; i++) {
       const concreteItem = await this.concreteItemsRepo.getConcreteItem(this.getRandomItem());
@@ -118,11 +115,50 @@ export class ItemService {
       concreteItems.push({ item: concreteItem, rarity });
     }
 
-    const choiceItem = concreteItems[choice];
+    return concreteItems;
+  }
+
+  /**
+   * Confirm gacha choice - create the selected item and deduct tokens
+   */
+  async confirmGacha(character_id: CharacterId, user_id: UserId, choice: number, offeredItems: ItemWithRarity[]) {
+    const ITEM_COST = 100; // tokens
+
+    // Validate choice
+    if (choice < 0 || choice > 2) {
+      throw new Error("Invalid choice. Must be 0, 1, or 2");
+    }
+
+    // Check if character belongs to user
+    const character = await this.characterService.getCharacter(character_id);
+    if (character.user_id !== user_id) {
+      throw new Error("Character does not belong to user");
+    }
+
+    // Re-check inventory limit (in case it changed)
+    const itemCount = await this.itemRepo.countByCharacterId(character_id);
+    if (itemCount >= 20) {
+      throw new Error("Inventory is full (maximum 20 items)");
+    }
+
+    // Re-check token balance
+    const user = await this.userRepo.findById(user_id);
+    if (!user || user.tokens < ITEM_COST) {
+      throw new Error(`Insufficient tokens: required ${ITEM_COST}, available ${user?.tokens || 0}`);
+    }
+
+    // Deduct tokens
+    await this.userRepo.deductCurrency(user_id, "tokens", ITEM_COST);
+
+    // Get the chosen item
+    const choiceItem = offeredItems[choice];
     if (!choiceItem) {
       throw new Error("Choice item not found");
     }
+
+    // Calculate damage with rarity multiplier
     const rarityMultiplier = choiceItem.rarity === "common" ? 1 : choiceItem.rarity === "rare" ? 1.2 : choiceItem.rarity === "epic" ? 1.5 : 2;
+
     // Create item
     const itemData: ItemData = {
       character_id: character_id,
@@ -132,9 +168,21 @@ export class ItemService {
       is_equipped: false,
     };
 
-    await this.itemRepo.create(itemData);
+    const createdItem = await this.itemRepo.create(itemData);
 
-    return concreteItems;
+    return {
+      createdItem,
+      allOfferedItems: offeredItems,
+    };
+  }
+
+  /**
+   * @deprecated Use initiateGacha and confirmGacha instead
+   * Legacy method for backward compatibility
+   */
+  async createItem(character_id: CharacterId, user_id: UserId, choice: number) {
+    const offeredItems = await this.initiateGacha(character_id, user_id);
+    return await this.confirmGacha(character_id, user_id, choice, offeredItems);
   }
 
 
@@ -201,16 +249,18 @@ export class ItemService {
    * Get character's equipment summary
    */
   async getEquipmentSummary(characterId: CharacterId) {
-    const [equippedItems, totalDamage, itemCount] = await Promise.all([
+    const [equippedItems, totalDamage, totalItemCount, inventoryCount] = await Promise.all([
       this.itemRepo.findEquippedByCharacterId(characterId),
       this.itemRepo.getTotalDamageContribution(characterId),
+      this.itemRepo.countAllByCharacterId(characterId),
       this.itemRepo.countByCharacterId(characterId),
     ]);
 
     return {
       equippedItems,
       totalDamageContribution: totalDamage,
-      totalItemCount: itemCount,
+      totalItemCount: totalItemCount,
+      inventoryCount: inventoryCount,
       equippedCount: equippedItems.length,
       availableSlots: 6 - equippedItems.length,
     };

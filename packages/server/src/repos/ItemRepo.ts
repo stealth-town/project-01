@@ -31,7 +31,15 @@ export class ItemRepo {
   async findByCharacterId(characterId: CharacterId) {
     const { data, error } = await supabaseClient
       .from("items")
-      .select("*")
+      .select(`
+        *,
+        concrete_items!items_concrete_item_id_fkey (
+          id,
+          category,
+          item_name,
+          dmg
+        )
+      `)
       .eq("character_id", characterId)
       .order("created_at", { ascending: false });
 
@@ -45,7 +53,15 @@ export class ItemRepo {
   async findEquippedByCharacterId(characterId: CharacterId) {
     const { data, error } = await supabaseClient
       .from("items")
-      .select("*")
+      .select(`
+        *,
+        concrete_items!items_concrete_item_id_fkey (
+          id,
+          category,
+          item_name,
+          dmg
+        )
+      `)
       .eq("character_id", characterId)
       .eq("is_equipped", true)
       .order("equipped_slot");
@@ -193,9 +209,23 @@ export class ItemRepo {
   }
 
   /**
-   * Count items for a character
+   * Count items for a character (unequipped only - for inventory limit check)
    */
   async countByCharacterId(characterId: CharacterId): Promise<number> {
+    const { count, error } = await supabaseClient
+      .from("items")
+      .select("*", { count: "exact", head: true })
+      .eq("character_id", characterId)
+      .eq("is_equipped", false);
+
+    if (error) throw error;
+    return count || 0;
+  }
+
+  /**
+   * Count all items for a character (equipped + unequipped)
+   */
+  async countAllByCharacterId(characterId: CharacterId): Promise<number> {
     const { count, error } = await supabaseClient
       .from("items")
       .select("*", { count: "exact", head: true })

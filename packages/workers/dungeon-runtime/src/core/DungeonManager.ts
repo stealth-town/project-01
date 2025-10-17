@@ -2,6 +2,11 @@ import { DungeonService } from "../../../../server/dist/services/dungeon/Dungeon
 import { CharacterRepo } from "../../../../server/dist/repos/CharacterRepo.js";
 import { DungeonRunsRepo } from "../../../../server/dist/repos/DungeonRunsRepo.js";
 
+
+/**
+ * TODO - remove the "any" fixes please, we cant have anys
+ */
+
 /**
  * DungeonManager - Manages the global dungeon cycle
  *
@@ -103,13 +108,13 @@ export class DungeonManager {
       const characters = await this.characterRepo.findAll();
 
       // Filter characters with DR > 0
-      const eligibleCharacters = characters.filter((char) => char.damage_rating > 0);
+      const eligibleCharacters = characters.filter((char: any) => char.damage_rating > 0);
 
       console.log(`Found ${eligibleCharacters.length} eligible characters (DR > 0)`);
 
       // Enroll each character
       const enrolledCount = await Promise.all(
-        eligibleCharacters.map(async (character) => {
+        eligibleCharacters.map(async (character: any) => {
           try {
             const characterDungeon = await this.dungeonService.enrollCharacterInDungeon(
               character.id,
@@ -162,7 +167,7 @@ export class DungeonManager {
 
       // Generate a hit for each character
       await Promise.all(
-        activeCharacterDungeons.map(async (characterDungeon) => {
+        activeCharacterDungeons.map(async (characterDungeon: any) => {
           try {
             const damage = this.calculateDamage(characterDungeon.starting_damage_rating);
             await this.dungeonService.recordHit(characterDungeon.id, damage);
@@ -220,7 +225,7 @@ export class DungeonManager {
 
       // Finish each character dungeon
       await Promise.all(
-        activeCharacterDungeons.map(async (characterDungeon) => {
+        activeCharacterDungeons.map(async (characterDungeon: any) => {
           try {
             await this.dungeonService.finishCharacterDungeon(characterDungeon.id);
           } catch (error: any) {

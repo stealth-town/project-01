@@ -120,6 +120,21 @@ class ApiClient {
     }>(`/items/character/${characterId}/summary`);
   }
 
+  async initiateGacha(characterId: string, userId: string) {
+    return this.request<{ offeredItems: any[]; message: string }>('/items/gacha/initiate', {
+      method: 'POST',
+      body: JSON.stringify({ characterId, userId }),
+    });
+  }
+
+  async confirmGacha(characterId: string, userId: string, choice: number, offeredItems: any[]) {
+    return this.request<{ createdItem: any; allOfferedItems: any[]; message: string }>('/items/gacha/confirm', {
+      method: 'POST',
+      body: JSON.stringify({ characterId, userId, choice, offeredItems }),
+    });
+  }
+
+  // @deprecated Use initiateGacha and confirmGacha instead
   async buyItem(characterId: string, userId: string) {
     return this.request<{ item: any; message: string }>('/items', {
       method: 'POST',

@@ -1,0 +1,48 @@
+# Build stage
+FROM node:20-alpine AS builder
+
+# Install dependencies for building
+WORKDIR /app
+
+# Copy root package files
+COPY package.json yarn.lock .yarnrc.yml ./
+COPY .yarn ./.yarn
+
+# Copy workspace packages
+COPY packages/shared ./packages/shared
+COPY packages/workers/trade-engine ./packages/workers/trade-engine
+
+# Install all dependencies
+RUN yarn install --immutable
+
+# Build shared package first
+WORKDIR /app/packages/shared
+RUN yarn build
+
+# Build trade-engine
+WORKDIR /app/packages/workers/trade-engine
+RUN yarn build
+
+# Production stage
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy root package files
+COPY package.json yarn.lock .yarnrc.yml ./
+COPY .yarn ./.yarn
+
+# Copy built packages
+COPY --from=builder /app/packages/shared/package.json ./packages/shared/package.json
+COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
+COPY --from=builder /app/packages/shared/node_modules ./packages/shared/node_modules
+
+COPY --from=builder /app/packages/workers/trade-engine/package.json ./packages/workers/trade-engine/package.json
+COPY --from=builder /app/packages/workers/trade-engine/dist ./packages/workers/trade-engine/dist
+COPY --from=builder /app/packages/workers/trade-engine/node_modules ./packages/workers/trade-engine/node_modules
+
+# Set working directory to trade-engine
+WORKDIR /app/packages/workers/trade-engine
+
+# Start worker
+CMD ["node", "dist/index.js"]

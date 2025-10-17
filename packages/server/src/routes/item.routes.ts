@@ -158,8 +158,99 @@ router.get("/:itemId", async (req: Request, res: Response) => {
 });
 
 /**
+ * POST /api/items/gacha/initiate
+ * Initiate gacha - get 3 random items to choose from (doesn't create item or charge tokens yet)
+ */
+router.post("/gacha/initiate", async (req: Request, res: Response) => {
+  try {
+    const { characterId, userId } = req.body;
+
+    if (!characterId || !userId) {
+      return res.status(400).json({
+        error: "Missing required fields",
+        message: "characterId and userId are required",
+      });
+    }
+
+    const offeredItems = await itemService.initiateGacha(characterId, userId);
+
+    res.json({
+      offeredItems,
+      message: "Select one of the three items"
+    });
+  } catch (error: any) {
+    console.error("Initiate gacha error:", error);
+
+    if (error.message.includes("Insufficient tokens") ||
+      error.message.includes("Inventory is full") ||
+      error.message.includes("does not belong to user")) {
+      return res.status(400).json({
+        error: "Cannot initiate gacha",
+        message: error.message,
+      });
+    }
+
+    res.status(500).json({
+      error: "Failed to initiate gacha",
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * POST /api/items/gacha/confirm
+ * Confirm gacha choice - create the selected item and deduct tokens
+ */
+router.post("/gacha/confirm", async (req: Request, res: Response) => {
+  try {
+    const { characterId, userId, choice, offeredItems } = req.body;
+
+    if (!characterId || !userId || choice === undefined || !offeredItems) {
+      return res.status(400).json({
+        error: "Missing required fields",
+        message: "characterId, userId, choice, and offeredItems are required",
+      });
+    }
+
+    const choiceInt = parseInt(choice);
+    if (isNaN(choiceInt) || choiceInt < 0 || choiceInt > 2) {
+      return res.status(400).json({
+        error: "Invalid choice",
+        message: "choice must be 0, 1, or 2",
+      });
+    }
+
+    const result = await itemService.confirmGacha(characterId, userId, choiceInt, offeredItems);
+
+    res.status(201).json({
+      createdItem: result.createdItem,
+      allOfferedItems: result.allOfferedItems,
+      message: "Item purchased successfully for 100 tokens"
+    });
+  } catch (error: any) {
+    console.error("Confirm gacha error:", error);
+
+    if (error.message.includes("Insufficient tokens") ||
+      error.message.includes("Inventory is full") ||
+      error.message.includes("does not belong to user") ||
+      error.message.includes("Invalid choice")) {
+      return res.status(400).json({
+        error: "Cannot confirm gacha",
+        message: error.message,
+      });
+    }
+
+    res.status(500).json({
+      error: "Failed to confirm gacha",
+      message: error.message,
+    });
+  }
+});
+
+/**
  * POST /api/items
- * Create a new item (buy item pack for 100 tokens)
+ * @deprecated Use /api/items/gacha/initiate and /api/items/gacha/confirm instead
+ * Legacy endpoint - Create a new item (buy item pack for 100 tokens)
  */
 router.post("/", async (req: Request, res: Response) => {
   try {
@@ -180,10 +271,10 @@ router.post("/", async (req: Request, res: Response) => {
       });
     }
 
-    const items = await itemService.createItem(characterId, userId, choice);
+    const result = await itemService.createItem(characterId, userId, choice);
 
     res.status(201).json({
-      items,
+      items: result.allOfferedItems,
       message: "Item purchased successfully for 100 tokens"
     });
   } catch (error: any) {
