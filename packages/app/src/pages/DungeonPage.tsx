@@ -92,14 +92,14 @@ export function DungeonPage() {
     loadData();
   }, [user]);
 
-  // Subscribe to real-time dungeon events
+  // Subscribe to real-time dungeon events and character dungeon updates
   useEffect(() => {
     if (!activeDungeon?.characterDungeon) return;
 
     console.log('Subscribing to dungeon events for:', activeDungeon.characterDungeon.id);
 
     const channel = supabaseClient
-      .channel('dungeon-events')
+      .channel(`dungeon-realtime-${activeDungeon.characterDungeon.id}`)
       .on(
         'postgres_changes',
         {
@@ -110,25 +110,63 @@ export function DungeonPage() {
         },
         (payload) => {
           console.log('New dungeon event:', payload);
-          setCombatLog((prev) => [...prev, payload.new as DungeonEvent]);
+          const newEvent = payload.new as DungeonEvent;
 
-          // Update total damage
+          // Add new event to combat log
+          setCombatLog((prev) => {
+            // Prevent duplicates
+            if (prev.some(e => e.id === newEvent.id)) return prev;
+            return [...prev, newEvent];
+          });
+
+          // Update total damage and tokens
           setActiveDungeon((prev) => {
             if (!prev) return prev;
             return {
               ...prev,
               characterDungeon: {
                 ...prev.characterDungeon,
-                total_damage_dealt: prev.characterDungeon.total_damage_dealt + (payload.new as DungeonEvent).damage_dealt,
-                tokens_earned: prev.characterDungeon.tokens_earned + (payload.new as DungeonEvent).damage_dealt,
+                total_damage_dealt: prev.characterDungeon.total_damage_dealt + newEvent.damage_dealt,
+                tokens_earned: prev.characterDungeon.tokens_earned + newEvent.damage_dealt,
               },
             };
           });
         }
       )
-      .subscribe();
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'character_dungeons',
+          filter: `id=eq.${activeDungeon.characterDungeon.id}`,
+        },
+        (payload) => {
+          console.log('Character dungeon updated:', payload);
+          const updated = payload.new as CharacterDungeon;
+
+          // Update character dungeon data
+          setActiveDungeon((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              characterDungeon: updated,
+            };
+          });
+
+          // If dungeon finished, reload all data
+          if (updated.finished_at && !activeDungeon.characterDungeon.finished_at) {
+            console.log('Dungeon finished, reloading data...');
+            setTimeout(() => loadData(), 1000);
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('Subscription status:', status);
+      });
 
     return () => {
+      console.log('Unsubscribing from dungeon realtime');
       channel.unsubscribe();
     };
   }, [activeDungeon?.characterDungeon?.id]);

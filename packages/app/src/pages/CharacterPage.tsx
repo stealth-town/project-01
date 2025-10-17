@@ -12,21 +12,31 @@ interface Character {
   updated_at: string;
 }
 
+interface ConcreteItem {
+  id: number;
+  category: string;
+  item_name: string;
+  dmg: number;
+}
+
 interface Item {
   id: string;
   character_id: string;
-  item_type: string;
+  concrete_item_id: number;
+  rarity: string;
   damage_contribution: number;
   is_equipped: boolean;
   equipped_slot?: number;
   created_at: string;
   updated_at: string;
+  concrete_items?: ConcreteItem;
 }
 
 interface EquipmentSummary {
   equippedItems: Item[];
   totalDamageContribution: number;
   totalItemCount: number;
+  inventoryCount: number;
   equippedCount: number;
   availableSlots: number;
 }
@@ -49,6 +59,9 @@ export function CharacterPage() {
   const [selectedCardIndex, setSelectedCardIndex] = useState<number | null>(null);
   const [revealedItem, setRevealedItem] = useState<any>(null);
   const [showOtherCards, setShowOtherCards] = useState(false);
+
+  // Delete confirmation state
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
   const loadCharacterData = async () => {
     if (!user?.id) return;
@@ -159,15 +172,25 @@ export function CharacterPage() {
     }
   };
 
-  const handleDeleteItem = async (itemId: string) => {
-    if (!confirm('Are you sure you want to delete this item?')) return;
+  const openDeleteModal = (itemId: string) => {
+    setItemToDelete(itemId);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!itemToDelete) return;
 
     try {
-      await apiClient.deleteItem(itemId);
+      await apiClient.deleteItem(itemToDelete);
+      setItemToDelete(null);
       await loadCharacterData(); // Refresh data
     } catch (err: any) {
       alert(err.message || 'Failed to delete item');
+      setItemToDelete(null);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setItemToDelete(null);
   };
 
   const openEquipModal = (itemId: string) => {
@@ -500,7 +523,7 @@ export function CharacterPage() {
                           Equip
                         </button>
                         <button
-                          onClick={() => handleDeleteItem(item.id)}
+                          onClick={() => openDeleteModal(item.id)}
                           style={{
                             padding: '0.5rem 1.5rem',
                             backgroundColor: '#f44336',
@@ -552,9 +575,9 @@ export function CharacterPage() {
               </div>
             </div>
             <div>
-              <div style={{ fontSize: '12px', color: '#888' }}>Total Items</div>
+              <div style={{ fontSize: '12px', color: '#888' }}>Inventory Items</div>
               <div style={{ fontSize: '20px' }}>
-                {equipmentSummary?.totalItemCount || 0} / 20
+                {equipmentSummary?.inventoryCount || 0} / 20
               </div>
             </div>
           </div>
@@ -981,6 +1004,101 @@ export function CharacterPage() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      {itemToDelete && (() => {
+        const itemToDeleteData = items.find(i => i.id === itemToDelete);
+        const concreteItem = itemToDeleteData?.concrete_items;
+        return (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}>
+            <div style={{
+              backgroundColor: '#1a1a1a',
+              border: '2px solid #333',
+              borderRadius: '8px',
+              padding: '2rem',
+              maxWidth: '400px',
+              textAlign: 'center',
+            }}>
+              <h3 style={{ margin: '0 0 1rem 0', color: '#f44336' }}>Delete Item?</h3>
+
+              {itemToDeleteData && concreteItem && (
+                <div style={{
+                  padding: '1rem',
+                  backgroundColor: '#2a2a2a',
+                  border: `2px solid ${getRarityColor(itemToDeleteData.rarity)}`,
+                  borderRadius: '8px',
+                  marginBottom: '1rem',
+                }}>
+                  <div style={{ fontSize: '40px', marginBottom: '0.5rem' }}>
+                    {getCategoryIcon(concreteItem.category)}
+                  </div>
+                  <div style={{ fontWeight: 'bold', fontSize: '16px', marginBottom: '0.25rem' }}>
+                    {concreteItem.item_name}
+                  </div>
+                  <div style={{
+                    fontSize: '12px',
+                    color: getRarityColor(itemToDeleteData.rarity),
+                    fontWeight: 'bold',
+                    textTransform: 'uppercase',
+                    marginBottom: '0.25rem',
+                  }}>
+                    {itemToDeleteData.rarity}
+                  </div>
+                  <div style={{ fontSize: '14px', color: '#4CAF50', fontWeight: 'bold' }}>
+                    +{itemToDeleteData.damage_contribution} DMG
+                  </div>
+                </div>
+              )}
+
+              <p style={{ marginBottom: '2rem', color: '#ccc' }}>
+                This action cannot be undone. Are you sure?
+              </p>
+
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                <button
+                  onClick={handleCancelDelete}
+                  style={{
+                    padding: '0.75rem 2rem',
+                    backgroundColor: '#666',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmDelete}
+                  style={{
+                    padding: '0.75rem 2rem',
+                    backgroundColor: '#f44336',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </>
   );
 }

@@ -74,6 +74,14 @@ class ApiClient {
     });
   }
 
+  // Town upgrade
+  async upgradeTown(userId: string) {
+    return this.request<{ newLevel: number; unlockedSlots: number }>('/town/upgrade', {
+      method: 'POST',
+      body: JSON.stringify({ userId }),
+    });
+  }
+
   // Trade management
   async startTrade(userId: string, buildingId: string, riskMode: RiskMode) {
     return this.request<{ trade: Trade }>('/town/start-trade', {
@@ -115,6 +123,7 @@ class ApiClient {
       equippedItems: any[];
       totalDamageContribution: number;
       totalItemCount: number;
+      inventoryCount: number;
       equippedCount: number;
       availableSlots: number;
     }>(`/items/character/${characterId}/summary`);

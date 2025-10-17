@@ -9,6 +9,8 @@ import {
 	RISK_MODE_CONFIG,
 	TOWN_LEVEL_SLOTS,
 	MAX_BUILDINGS,
+	TOWN_UPGRADE_COST,
+	MAX_TOWN_LEVEL,
 } from '@stealth-town/shared/types';
 import { UserRepo } from '../../repos/UserRepo.js';
 import { BuildingRepo } from '../../repos/BuildingRepo.js';
@@ -133,6 +135,43 @@ export class TownService {
 		await this.buildingPurchaseRepo.create(userId, building.id, slotNumber, BUILDING_COST_USDC);
 
 		return building;
+	}
+
+	/**
+	 * Upgrade town to next level
+	 */
+	async upgradeTown(userId: string) {
+		// Get current town level
+		const currentLevel = await this.userRepo.getTownLevel(userId);
+
+		// Check if already at max level
+		if (currentLevel >= MAX_TOWN_LEVEL) {
+			throw new Error(`Town is already at max level (${MAX_TOWN_LEVEL})`);
+		}
+
+		// Get upgrade cost for current level
+		const upgradeCost = TOWN_UPGRADE_COST[currentLevel as keyof typeof TOWN_UPGRADE_COST];
+		if (upgradeCost === undefined) {
+			throw new Error(`No upgrade available for level ${currentLevel}`);
+		}
+
+		// Check USDC balance
+		const balances = await this.userRepo.getBalances(userId);
+		if (balances.usdc < upgradeCost) {
+			throw new Error(`Insufficient USDC: required ${upgradeCost}, available ${balances.usdc}`);
+		}
+
+		// Deduct USDC
+		await this.userRepo.deductCurrency(userId, 'usdc', upgradeCost);
+
+		// Upgrade town level
+		const newLevel = currentLevel + 1;
+		await this.userRepo.setTownLevel(userId, newLevel);
+
+		return {
+			newLevel,
+			unlockedSlots: TOWN_LEVEL_SLOTS[newLevel as keyof typeof TOWN_LEVEL_SLOTS] || MAX_BUILDINGS
+		};
 	}
 
 	/**

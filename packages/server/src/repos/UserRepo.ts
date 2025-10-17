@@ -98,6 +98,18 @@ export class UserRepo {
     return data.town_level;
   }
 
+  async setTownLevel(userId: string, level: number) {
+    const { data, error } = await supabaseClient
+      .from('users')
+      .update({ town_level: level })
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
   async upgradeTownLevel(userId: string) {
     const currentLevel = await this.getTownLevel(userId);
     const newLevel = Math.min(currentLevel + 1, 3); // Max level 3

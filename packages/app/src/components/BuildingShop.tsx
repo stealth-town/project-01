@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiClient } from '../api/client';
 import type { TownBuilding, UserBalances } from '@stealth-town/shared/types';
+import { BUILDING_COST_USDC, TOWN_UPGRADE_COST, MAX_TOWN_LEVEL, TOWN_LEVEL_SLOTS } from '@stealth-town/shared/types';
 // styles in main.scss
 
 interface BuildingShopProps {
@@ -11,27 +12,25 @@ interface BuildingShopProps {
   onPurchase: () => void;
 }
 
-const BUILDING_COST = 100;
-const MAX_BUILDINGS_PER_LEVEL: Record<number, number> = {
-  1: 1,
-  2: 2,
-  3: 3,
-};
-
 export function BuildingShop({ townLevel, buildings, balances, onPurchase }: BuildingShopProps) {
   const { user } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingBuilding, setIsLoadingBuilding] = useState(false);
+  const [isLoadingUpgrade, setIsLoadingUpgrade] = useState(false);
   const [error, setError] = useState('');
 
-  const maxBuildings = MAX_BUILDINGS_PER_LEVEL[townLevel] || 3;
+  const maxSlots = TOWN_LEVEL_SLOTS[townLevel as keyof typeof TOWN_LEVEL_SLOTS] || 1;
   const currentBuildingCount = buildings.length;
-  const canAfford = balances.usdc >= BUILDING_COST;
-  const hasSlotAvailable = currentBuildingCount < maxBuildings;
+  const canAffordBuilding = balances.usdc >= BUILDING_COST_USDC;
+  const hasSlotAvailable = currentBuildingCount < maxSlots;
 
-  const handlePurchase = async () => {
-    if (!user || !canAfford || !hasSlotAvailable) return;
+  const canUpgradeTown = townLevel < MAX_TOWN_LEVEL;
+  const upgradeCost = TOWN_UPGRADE_COST[townLevel as keyof typeof TOWN_UPGRADE_COST];
+  const canAffordUpgrade = upgradeCost !== undefined && balances.usdc >= upgradeCost;
 
-    setIsLoading(true);
+  const handlePurchaseBuilding = async () => {
+    if (!user || !canAffordBuilding || !hasSlotAvailable) return;
+
+    setIsLoadingBuilding(true);
     setError('');
 
     try {
@@ -41,7 +40,23 @@ export function BuildingShop({ townLevel, buildings, balances, onPurchase }: Bui
     } catch (err: any) {
       setError(err.message || 'Purchase failed');
     } finally {
-      setIsLoading(false);
+      setIsLoadingBuilding(false);
+    }
+  };
+
+  const handleUpgradeTown = async () => {
+    if (!user || !canAffordUpgrade || !canUpgradeTown) return;
+
+    setIsLoadingUpgrade(true);
+    setError('');
+
+    try {
+      await apiClient.upgradeTown(user.id);
+      onPurchase(); // Refresh town state
+    } catch (err: any) {
+      setError(err.message || 'Upgrade failed');
+    } finally {
+      setIsLoadingUpgrade(false);
     }
   };
 
@@ -54,36 +69,68 @@ export function BuildingShop({ townLevel, buildings, balances, onPurchase }: Bui
         <div className="info-row">
           <span>Buildings:</span>
           <span className="info-value">
-            {currentBuildingCount} / {maxBuildings}
+            {currentBuildingCount} / {maxSlots}
           </span>
         </div>
         <div className="info-row">
           <span>Town Level:</span>
-          <span className="info-value">{townLevel}</span>
+          <span className="info-value">{townLevel} / {MAX_TOWN_LEVEL}</span>
         </div>
       </div>
 
+      {/* Town Upgrade Section */}
+      {canUpgradeTown && (
+        <div className="purchase-section">
+          <div className="building-card">
+            <div className="building-icon">⬆️</div>
+            <div className="building-details">
+              <span className="building-name">Upgrade Town to Level {townLevel + 1}</span>
+              <span className="building-price">${upgradeCost} USDC</span>
+              <span style={{ fontSize: '12px', color: '#888' }}>
+                Unlocks {TOWN_LEVEL_SLOTS[(townLevel + 1) as keyof typeof TOWN_LEVEL_SLOTS]} building slot{TOWN_LEVEL_SLOTS[(townLevel + 1) as keyof typeof TOWN_LEVEL_SLOTS] > 1 ? 's' : ''}
+              </span>
+            </div>
+          </div>
+
+          <button
+            onClick={handleUpgradeTown}
+            disabled={isLoadingUpgrade || !canAffordUpgrade}
+            className="buy-building-button"
+            style={{ backgroundColor: canAffordUpgrade ? '#FF9800' : '#666' }}
+          >
+            {!canAffordUpgrade
+              ? 'Insufficient USDC'
+              : isLoadingUpgrade
+              ? 'Upgrading...'
+              : `Upgrade Town ($${upgradeCost})`}
+          </button>
+        </div>
+      )}
+
+      {/* Building Purchase Section */}
       <div className="purchase-section">
         <div className="building-card">
           <div className="building-icon">🏢</div>
           <div className="building-details">
             <span className="building-name">New Building Slot</span>
-            <span className="building-price">${BUILDING_COST} USDC</span>
+            <span className="building-price">${BUILDING_COST_USDC} USDC</span>
           </div>
         </div>
 
         <button
-          onClick={handlePurchase}
-          disabled={isLoading || !canAfford || !hasSlotAvailable}
+          onClick={handlePurchaseBuilding}
+          disabled={isLoadingBuilding || !canAffordBuilding || !hasSlotAvailable}
           className="buy-building-button"
         >
           {!hasSlotAvailable
-            ? `Max slots unlocked (Level ${townLevel})`
-            : !canAfford
+            ? canUpgradeTown
+              ? `Upgrade town to unlock more slots`
+              : `Max slots reached (${maxSlots}/${maxSlots})`
+            : !canAffordBuilding
             ? 'Insufficient USDC'
-            : isLoading
+            : isLoadingBuilding
             ? 'Buying...'
-            : 'Buy Building'}
+            : `Buy Building ($${BUILDING_COST_USDC})`}
         </button>
       </div>
     </div>

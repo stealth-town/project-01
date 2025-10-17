@@ -111,6 +111,43 @@ router.post('/buy-building', async (req: Request, res: Response) => {
 });
 
 /**
+ * POST /api/town/upgrade
+ * Upgrade town to next level
+ */
+router.post('/upgrade', async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({
+        error: 'Missing required fields',
+        message: 'userId is required'
+      });
+    }
+
+    const result = await townService.upgradeTown(userId);
+
+    res.json(result);
+  } catch (error: any) {
+    console.error('Upgrade town error:', error);
+
+    if (error.message.includes('Insufficient') ||
+        error.message.includes('already at max level') ||
+        error.message.includes('No upgrade available')) {
+      return res.status(400).json({
+        error: 'Upgrade failed',
+        message: error.message
+      });
+    }
+
+    res.status(500).json({
+      error: 'Failed to upgrade town',
+      message: error.message
+    });
+  }
+});
+
+/**
  * POST /api/town/start-trade
  * Start a trade on a building
  */

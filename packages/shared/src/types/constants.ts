@@ -58,6 +58,17 @@ export const TOWN_LEVEL_SLOTS = {
 } as const;
 
 /**
+ * Town Upgrade Costs
+ * Maps town level to USDC cost to upgrade to next level
+ */
+export const TOWN_UPGRADE_COST = {
+  1: 200, // Cost to upgrade from level 1 to level 2
+  2: 400  // Cost to upgrade from level 2 to level 3
+} as const;
+
+export const MAX_TOWN_LEVEL = 3;
+
+/**
  * Starting Balances for New Users
  */
 export const STARTING_BALANCES = {

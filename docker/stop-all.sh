@@ -3,7 +3,7 @@
 # Quick stop and cleanup script
 
 echo "Stopping all Docker services..."
-docker-compose down
+docker compose down
 
 echo ""
 echo "Services stopped!"

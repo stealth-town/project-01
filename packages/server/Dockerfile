@@ -1,51 +1,44 @@
-# Build stage
-FROM node:20-alpine AS builder
+# ---- Build stage ----
+FROM node:24-alpine AS builder
 
-# Install dependencies for building
 WORKDIR /app
 
-# Copy root package files
+# Copy root files
 COPY package.json yarn.lock .yarnrc.yml ./
 COPY .yarn ./.yarn
 
-# Copy workspace packages
+# Copy only needed workspace packages
 COPY packages/shared ./packages/shared
 COPY packages/server ./packages/server
 
-# Install all dependencies
-RUN yarn install --immutable
+# Install dependencies
+RUN yarn install
 
-# Build shared package first
+# Build shared first
 WORKDIR /app/packages/shared
 RUN yarn build
 
-# Build server
+# Then build the server
 WORKDIR /app/packages/server
 RUN yarn build
 
-# Production stage
-FROM node:20-alpine
+# ---- Runtime stage ----
+FROM node:24-alpine
 
 WORKDIR /app
 
-# Copy root package files
-COPY package.json yarn.lock .yarnrc.yml ./
-COPY .yarn ./.yarn
+# Copy entire built packages (dist + package.json + node_modules)
+COPY --from=builder /app/packages/shared ./packages/shared
+COPY --from=builder /app/packages/server ./packages/server
 
-# Copy built packages
-COPY --from=builder /app/packages/shared/package.json ./packages/shared/package.json
-COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
-COPY --from=builder /app/packages/shared/node_modules ./packages/shared/node_modules
+# Copy root files for proper module resolution
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/yarn.lock ./yarn.lock
+COPY --from=builder /app/node_modules ./node_modules
 
-COPY --from=builder /app/packages/server/package.json ./packages/server/package.json
-COPY --from=builder /app/packages/server/dist ./packages/server/dist
-COPY --from=builder /app/packages/server/node_modules ./packages/server/node_modules
-
-# Set working directory to server
+# Set working dir to server
 WORKDIR /app/packages/server
 
-# Expose port
 EXPOSE 3000
 
-# Start server
 CMD ["node", "dist/index.js"]

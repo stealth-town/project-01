@@ -1,48 +1,50 @@
-# Build stage
-FROM node:20-alpine AS builder
+# ---- Build stage ----
+FROM node:24-alpine AS builder
 
-# Install dependencies for building
 WORKDIR /app
 
-# Copy root package files
+# Copy Yarn files
 COPY package.json yarn.lock .yarnrc.yml ./
 COPY .yarn ./.yarn
+
+# Force Yarn to use node_modules instead of PnP (optional)
+# RUN echo "nodeLinker: node-modules" >> .yarnrc.yml
 
 # Copy workspace packages
 COPY packages/shared ./packages/shared
+COPY packages/server ./packages/server
 COPY packages/workers/trade-engine ./packages/workers/trade-engine
 
-# Install all dependencies
-RUN yarn install --immutable
+# Install dependencies
+RUN yarn install
 
-# Build shared package first
+# Build shared and worker
 WORKDIR /app/packages/shared
 RUN yarn build
 
-# Build trade-engine
+# Then build the server
+WORKDIR /app/packages/server
+RUN yarn build
+
+# Then build the trade-engine
 WORKDIR /app/packages/workers/trade-engine
 RUN yarn build
 
-# Production stage
-FROM node:20-alpine
+# ---- Runtime stage ----
+FROM node:24-alpine
 
 WORKDIR /app
 
-# Copy root package files
+# Copy necessary files
 COPY package.json yarn.lock .yarnrc.yml ./
 COPY .yarn ./.yarn
 
-# Copy built packages
-COPY --from=builder /app/packages/shared/package.json ./packages/shared/package.json
-COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
-COPY --from=builder /app/packages/shared/node_modules ./packages/shared/node_modules
+# Copy built artifacts and node_modules
+COPY --from=builder /app/packages/shared ./packages/shared
+COPY --from=builder /app/packages/server ./packages/server
+COPY --from=builder /app/packages/workers/trade-engine ./packages/workers/trade-engine
+COPY --from=builder /app/node_modules ./node_modules
 
-COPY --from=builder /app/packages/workers/trade-engine/package.json ./packages/workers/trade-engine/package.json
-COPY --from=builder /app/packages/workers/trade-engine/dist ./packages/workers/trade-engine/dist
-COPY --from=builder /app/packages/workers/trade-engine/node_modules ./packages/workers/trade-engine/node_modules
-
-# Set working directory to trade-engine
 WORKDIR /app/packages/workers/trade-engine
 
-# Start worker
 CMD ["node", "dist/index.js"]
