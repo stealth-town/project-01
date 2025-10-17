@@ -41,6 +41,8 @@ services:
       - PORT=3000
       - SUPABASE_API_URL=${SUPABASE_API_URL}
       - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_URL=${SUPABASE_API_URL}  
+      - SUPABASE_PUBLISHABLE_KEY=${SUPABASE_ANON_KEY}  
     networks:
       - unfuck-network
     healthcheck:
@@ -61,6 +63,8 @@ services:
       - NODE_ENV=production
       - SUPABASE_API_URL=${SUPABASE_API_URL}
       - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_URL=${SUPABASE_API_URL}  
+      - SUPABASE_PUBLISHABLE_KEY=${SUPABASE_ANON_KEY}  
     networks:
       - unfuck-network
     depends_on:
@@ -77,6 +81,8 @@ services:
       - NODE_ENV=production
       - SUPABASE_API_URL=${SUPABASE_API_URL}
       - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_URL=${SUPABASE_API_URL}  
+      - SUPABASE_PUBLISHABLE_KEY=${SUPABASE_ANON_KEY}  
     networks:
       - unfuck-network
     depends_on:
