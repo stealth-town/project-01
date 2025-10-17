@@ -14,11 +14,10 @@ if [ -z "$1" ]; then
 fi
 
 EMAIL=$1
-
 echo "Using email: $EMAIL"
 
-# Update docker compose.yml with the provided email
-sed -i.bak "s/your-email@example.com/$EMAIL/g" docker compose.yml
+# Update docker-compose.yml with the provided email
+sed -i.bak "s/your-email@example.com/$EMAIL/g" docker-compose.yml
 
 echo "Starting nginx without SSL first..."
 # Use initial config for certificate request
@@ -38,15 +37,18 @@ docker compose run --rm certbot certonly \
     -d api.flagwars.dev
 
 if [ $? -eq 0 ]; then
-    echo "SSL certificate obtained successfully!"
+    echo "✅ SSL certificate obtained successfully!"
     echo "Switching to SSL-enabled nginx configuration..."
-    # Restore the full nginx config with SSL
-    git checkout nginx.conf 2>/dev/null || echo "Using current nginx.conf with SSL"
+
+    # Replace nginx.conf with the SSL-ready config
+    cp nginx-ssl.conf nginx.conf
+
+    # Restart nginx to apply SSL config
     docker compose restart nginx
-    
+
     echo "Testing HTTPS endpoint..."
     curl -I https://api.flagwars.dev/health
-    
+
     echo ""
     echo "✅ HTTPS setup complete!"
     echo "Your API is now available at: https://api.flagwars.dev"
