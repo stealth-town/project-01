@@ -148,9 +148,9 @@ export type Database = {
           id: string
           joined_at: string
           starting_damage_rating: number
-          tokens_earned: number
           total_damage_dealt: number
           updated_at: string
+          usdc_earned: number
           user_id: string
         }
         Insert: {
@@ -162,9 +162,9 @@ export type Database = {
           id?: string
           joined_at?: string
           starting_damage_rating?: number
-          tokens_earned?: number
           total_damage_dealt?: number
           updated_at?: string
+          usdc_earned?: number
           user_id: string
         }
         Update: {
@@ -176,9 +176,9 @@ export type Database = {
           id?: string
           joined_at?: string
           starting_damage_rating?: number
-          tokens_earned?: number
           total_damage_dealt?: number
           updated_at?: string
+          usdc_earned?: number
           user_id?: string
         }
         Relationships: [

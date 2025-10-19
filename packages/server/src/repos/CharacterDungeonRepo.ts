@@ -8,7 +8,7 @@ export interface CharacterDungeonData {
   user_id: UserId;
   starting_damage_rating: number;
   total_damage_dealt?: number;
-  tokens_earned?: number;
+  usdc_earned?: number;
   joined_at?: string;
   finished_at?: string | null;
   claimed_at?: string | null;
@@ -27,7 +27,7 @@ export class CharacterDungeonRepo {
         user_id: data.user_id,
         starting_damage_rating: data.starting_damage_rating,
         total_damage_dealt: data.total_damage_dealt ?? 0,
-        tokens_earned: data.tokens_earned ?? 0,
+        usdc_earned: data.usdc_earned ?? 0,
         joined_at: data.joined_at ?? new Date().toISOString(),
       })
       .select()
@@ -133,16 +133,19 @@ export class CharacterDungeonRepo {
   }
 
   /**
-   * Increment damage dealt and tokens earned
+   * Increment damage dealt and USDC earned
    */
   async incrementDamage(id: string, damageAmount: number) {
     const characterDungeon = await this.findById(id);
+
+    // Convert damage to USDC: 0.01 USDC per 1 damage dealt
+    const usdcEarned = damageAmount * 0.01;
 
     const { data, error } = await supabaseClient
       .from("character_dungeons")
       .update({
         total_damage_dealt: characterDungeon.total_damage_dealt + damageAmount,
-        tokens_earned: characterDungeon.tokens_earned + damageAmount, // 1:1 ratio
+        usdc_earned: characterDungeon.usdc_earned + usdcEarned,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)
@@ -177,19 +180,19 @@ export class CharacterDungeonRepo {
   async getCharacterStats(characterId: CharacterId) {
     const { data, error } = await supabaseClient
       .from("character_dungeons")
-      .select("total_damage_dealt, tokens_earned")
+      .select("total_damage_dealt, usdc_earned")
       .eq("character_id", characterId)
       .not("finished_at", "is", null);
 
     if (error) throw error;
 
     const totalDamage = data.reduce((sum, cd) => sum + cd.total_damage_dealt, 0);
-    const totalTokens = data.reduce((sum, cd) => sum + cd.tokens_earned, 0);
+    const totalUsdc = data.reduce((sum, cd) => sum + cd.usdc_earned, 0);
     const totalRuns = data.length;
 
     return {
       totalDamage,
-      totalTokens,
+      totalUsdc,
       totalRuns,
     };
   }

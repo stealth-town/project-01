@@ -102,11 +102,11 @@ export class DungeonService {
     // Mark as claimed
     const updated = await this.characterDungeonRepo.claim(characterDungeonId);
 
-    // Add tokens to user
-    await this.userRepo.addCurrency(userId, "tokens", characterDungeon.tokens_earned);
+    // Add USDC to user
+    await this.userRepo.addCurrency(userId, "usdc", characterDungeon.usdc_earned);
 
     return {
-      tokens: characterDungeon.tokens_earned,
+      usdc: characterDungeon.usdc_earned,
       characterDungeon: updated,
     };
   }
@@ -129,25 +129,25 @@ export class DungeonService {
 
     if (unclaimedDungeons.length === 0) {
       return {
-        totalTokens: 0,
+        totalUsdc: 0,
         claimedCount: 0,
         dungeons: [],
       };
     }
 
-    // Calculate total tokens
-    const totalTokens = unclaimedDungeons.reduce((sum, cd) => sum + cd.tokens_earned, 0);
+    // Calculate total USDC
+    const totalUsdc = unclaimedDungeons.reduce((sum, cd) => sum + cd.usdc_earned, 0);
 
     // Claim all
     const claimed = await Promise.all(
       unclaimedDungeons.map((cd) => this.characterDungeonRepo.claim(cd.id))
     );
 
-    // Add tokens to user
-    await this.userRepo.addCurrency(userId, "tokens", totalTokens);
+    // Add USDC to user
+    await this.userRepo.addCurrency(userId, "usdc", totalUsdc);
 
     return {
-      totalTokens,
+      totalUsdc,
       claimedCount: claimed.length,
       dungeons: claimed,
     };

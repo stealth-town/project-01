@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiClient } from '../../api/client';
 import type { TownBuilding, Trade } from '@stealth-town/shared/types';
+import { RISK_MODE_CONFIG } from '@stealth-town/shared/types';
 // styles in main.scss
 
 interface BuildingLiquidatedViewProps {
@@ -59,6 +60,14 @@ export function BuildingLiquidatedView({ building, onUpdate }: BuildingLiquidate
     100
   ).toFixed(1);
 
+  // Calculate time saved
+  const totalDuration = RISK_MODE_CONFIG[trade.riskMode].duration; // in seconds
+  const startTime = new Date(trade.startedAt || trade.createdAt).getTime();
+  const endTime = new Date(trade.resolvedAt || new Date()).getTime();
+  const actualDurationSeconds = Math.floor((endTime - startTime) / 1000);
+  const timeSavedSeconds = Math.max(0, totalDuration - actualDurationSeconds);
+  const timeSavedSecondsDisplay = Math.floor(timeSavedSeconds);
+
   return (
     <div className="building-liquidated-view">
       <div className="liquidation-banner">
@@ -71,36 +80,14 @@ export function BuildingLiquidatedView({ building, onUpdate }: BuildingLiquidate
 
       <div className="liquidation-details">
         <div className="detail-row consolation">
-          <span className="detail-label">Consolation Tokens</span>
-          <span className="detail-value">100 🎁</span>
+          <span className="detail-label">Rewarded Tokens</span>
+          <span className="detail-value">100 🪙</span>
         </div>
-        <div className="detail-row loss">
-          <span className="detail-label">Energy Lost</span>
-          <span className="detail-value">{trade.energySpent} ⚡</span>
+        <div className="detail-row" style={{ borderColor: '#4d8bf0' }}>
+          <span className="detail-label">Time Saved</span>
+          <span className="detail-value" style={{ color: '#4d8bf0' }}>{timeSavedSecondsDisplay} mins</span>
+          <span className="detail-label"><i>Demo time duration</i></span>
         </div>
-      </div>
-
-      <div className="trade-summary-liquidated">
-        <div className="summary-item">
-          <span>Risk Mode:</span>
-          <span>{trade.riskMode.toUpperCase()}</span>
-        </div>
-        <div className="summary-item">
-          <span>Entry Price:</span>
-          <span>${trade.entryPrice.toFixed(2)}</span>
-        </div>
-        <div className="summary-item">
-          <span>Liquidation Price:</span>
-          <span className="danger">${trade.liquidationPrice.toFixed(2)}</span>
-        </div>
-        <div className="summary-item">
-          <span>Price Drop:</span>
-          <span className="danger">-{priceDropPercent}%</span>
-        </div>
-      </div>
-
-      <div className="tip-box">
-        <strong>💡 Tip:</strong> Try a less risky mode next time, or watch the market more closely!
       </div>
 
       <button
@@ -108,7 +95,7 @@ export function BuildingLiquidatedView({ building, onUpdate }: BuildingLiquidate
         disabled={isLoading}
         className="acknowledge-button"
       >
-        {isLoading ? 'Claiming...' : 'Claim Consolation (100 Tokens)'}
+        {isLoading ? 'Claiming...' : 'Claim Reward (100 Tokens)'}
       </button>
     </div>
   );

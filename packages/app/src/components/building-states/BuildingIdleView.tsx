@@ -31,15 +31,39 @@ export function BuildingIdleView({ building, balances, onUpdate }: BuildingIdleV
     }
   };
 
+  // Calculate leverage based on liquidation threshold
+  const getLeverage = (threshold: number) => {
+    return Math.round(1 / threshold);
+  };
+
   return (
     <div className="building-idle-view">
-      <h2>Select Risk Mode</h2>
+      <h2 style={{ marginBottom: '0.5rem', color: '#000000' }}>Choose trade duration and leverage</h2>
+
+      <div style={{ marginBottom: '2rem' }}>
+        <p style={{
+          color: '#10b981',
+          fontSize: '0.875rem',
+          marginBottom: '0.5rem',
+          lineHeight: '1.5'
+        }}>
+          If you survive the trade duration you will get <strong style={{ fontWeight: 700 }}>energy refund</strong>
+        </p>
+        <p style={{
+          color: '#ef4444',
+          fontSize: '0.875rem',
+          lineHeight: '1.5'
+        }}>
+          If you get <strong style={{ fontWeight: 700 }}>liquidated</strong> you will get token <strong style={{ fontWeight: 700 }}>rewards faster</strong>
+        </p>
+      </div>
 
       <div className="mode-selection-grid">
-        {[RiskMode.TURTLE, RiskMode.WALK, RiskMode.CHEETAH].map(mode => {
+        {[RiskMode.CHEETAH, RiskMode.WALK, RiskMode.TURTLE].map(mode => {
           const config = RISK_MODE_CONFIG[mode];
           const canAfford = balances.energy >= config.energyCost;
           const modeIcon = mode === RiskMode.TURTLE ? '🐢' : mode === RiskMode.WALK ? '🚶' : '🐆';
+          const leverage = getLeverage(config.liquidationThreshold);
 
           return (
             <div key={mode} className={`mode-card mode-${mode}`}>
@@ -54,12 +78,12 @@ export function BuildingIdleView({ building, balances, onUpdate }: BuildingIdleV
                   <span className="value">{config.duration}s</span>
                 </div>
                 <div className="stat">
-                  <span className="label">Liquidation</span>
-                  <span className="value">{(config.liquidationThreshold * 100).toFixed(2)}%</span>
+                  <span className="label">Leverage</span>
+                  <span className="value">{leverage}x</span>
                 </div>
                 <div className="stat">
                   <span className="label">Reward</span>
-                  <span className="value">{config.tokensReward} 🎁</span>
+                  <span className="value">{config.tokensReward} 🪙</span>
                 </div>
               </div>
 

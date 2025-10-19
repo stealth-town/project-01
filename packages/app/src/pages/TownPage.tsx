@@ -9,7 +9,7 @@ import { EnergyShop } from '../components/EnergyShop';
 import { BuildingShop } from '../components/BuildingShop';
 import { BuildingSidebar } from '../components/BuildingSidebar';
 import { TradingMainContent } from '../components/TradingMainContent';
-import { Navigation } from '../components/Navigation';
+import { Layout } from '../components/Layout';
 // styles in main.scss
 
 export function TownPage() {
@@ -85,31 +85,37 @@ export function TownPage() {
 
   if (isLoading) {
     return (
-      <div className="loading-container">
-        <div className="loading-spinner" />
-        <p>Loading your town...</p>
-      </div>
+      <Layout>
+        <div className="loading-container">
+          <div className="loading-spinner" />
+          <p>Loading your town...</p>
+        </div>
+      </Layout>
     );
   }
 
   if (error) {
     return (
-      <div className="error-container">
-        <p className="error-text">{error}</p>
-        <button onClick={loadTownState} className="retry-button">
-          Retry
-        </button>
-      </div>
+      <Layout>
+        <div className="error-container">
+          <p className="error-text">{error}</p>
+          <button onClick={loadTownState} className="retry-button">
+            Retry
+          </button>
+        </div>
+      </Layout>
     );
   }
 
   // Don't render if balances haven't loaded yet
   if (!balances) {
     return (
-      <div className="loading-container">
-        <div className="loading-spinner" />
-        <p>Loading balances...</p>
-      </div>
+      <Layout>
+        <div className="loading-container">
+          <div className="loading-spinner" />
+          <p>Loading balances...</p>
+        </div>
+      </Layout>
     );
   }
 
@@ -120,8 +126,7 @@ export function TownPage() {
   const selectedBuilding = buildings.find(b => b.id === selectedBuildingId) || null;
 
   return (
-    <>
-      <Navigation />
+    <Layout>
       <div className="town-page">
         {/* Main Content */}
         <div className="town-content">
@@ -156,6 +161,6 @@ export function TownPage() {
         </main>
       </div>
     </div>
-    </>
+    </Layout>
   );
 }

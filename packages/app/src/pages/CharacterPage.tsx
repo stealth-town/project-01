@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiClient } from '../api/client';
-import { Navigation } from '../components/Navigation';
+import { Layout } from '../components/Layout';
 import type { UserBalances } from '@stealth-town/shared/types';
 
 interface Character {
@@ -52,13 +52,12 @@ export function CharacterPage() {
   const [itemToEquip, setItemToEquip] = useState<string | null>(null);
 
   // Gacha state
-  const [showGachaConfirm, setShowGachaConfirm] = useState(false);
   const [showGachaSelection, setShowGachaSelection] = useState(false);
   const [showGachaReveal, setShowGachaReveal] = useState(false);
   const [offeredItems, setOfferedItems] = useState<any[]>([]);
   const [selectedCardIndex, setSelectedCardIndex] = useState<number | null>(null);
   const [revealedItem, setRevealedItem] = useState<any>(null);
-  const [showOtherCards, setShowOtherCards] = useState(false);
+  const [revealedOtherCards, setRevealedOtherCards] = useState<Set<number>>(new Set());
 
   // Delete confirmation state
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
@@ -97,15 +96,10 @@ export function CharacterPage() {
     loadCharacterData();
   }, [user]);
 
-  const handleBuyItem = () => {
-    setShowGachaConfirm(true);
-  };
-
-  const handleConfirmBuy = async () => {
+  const handleBuyItem = async () => {
     if (!character || !user) return;
 
     try {
-      setShowGachaConfirm(false);
       const response = await apiClient.initiateGacha(character.id, user.id);
       setOfferedItems(response.offeredItems);
       setShowGachaSelection(true);
@@ -113,10 +107,6 @@ export function CharacterPage() {
     } catch (err: any) {
       alert(err.message || 'Failed to initiate gacha');
     }
-  };
-
-  const handleCancelBuy = () => {
-    setShowGachaConfirm(false);
   };
 
   const handleCardSelect = (index: number) => {
@@ -131,7 +121,7 @@ export function CharacterPage() {
       setRevealedItem(response.allOfferedItems[selectedCardIndex]);
       setShowGachaSelection(false);
       setShowGachaReveal(true);
-      setShowOtherCards(false);
+      setRevealedOtherCards(new Set());
     } catch (err: any) {
       alert(err.message || 'Failed to confirm selection');
       setShowGachaSelection(false);
@@ -140,8 +130,8 @@ export function CharacterPage() {
     }
   };
 
-  const handleShowOtherCards = () => {
-    setShowOtherCards(true);
+  const handleRevealOtherCard = (index: number) => {
+    setRevealedOtherCards(prev => new Set([...prev, index]));
   };
 
   const handleCollect = async () => {
@@ -149,7 +139,7 @@ export function CharacterPage() {
     setRevealedItem(null);
     setOfferedItems([]);
     setSelectedCardIndex(null);
-    setShowOtherCards(false);
+    setRevealedOtherCards(new Set());
     await loadCharacterData();
   };
 
@@ -245,79 +235,71 @@ export function CharacterPage() {
 
   if (isLoading) {
     return (
-      <>
-        <Navigation />
+      <Layout>
         <div style={{ padding: '2rem', textAlign: 'center' }}>
           <p>Loading character...</p>
         </div>
-      </>
+      </Layout>
     );
   }
 
   if (error) {
     return (
-      <>
-        <Navigation />
+      <Layout>
         <div style={{ padding: '2rem', textAlign: 'center', color: 'red' }}>
           <p>{error}</p>
         </div>
-      </>
+      </Layout>
     );
   }
 
   if (!character) {
     return (
-      <>
-        <Navigation />
+      <Layout>
         <div style={{ padding: '2rem', textAlign: 'center' }}>
           <p>No character found. Create one first!</p>
         </div>
-      </>
+      </Layout>
     );
   }
 
   const unequippedItems = items.filter(item => !item.is_equipped);
 
   return (
-    <>
-      <Navigation />
+    <Layout>
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: '200px 1fr 200px',
-        gap: '2rem',
-        padding: '2rem',
-        maxWidth: '1400px',
+        width: '80%',
         margin: '0 auto',
+        display: 'flex',
+        gap: '2rem',
+        padding: '2rem 0',
+        height: '100%',
+        overflow: 'hidden',
       }}>
-        {/* Left Panel - Buy Item */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <button
-            onClick={handleBuyItem}
-            disabled={!balances || balances.tokens < 100}
-            style={{
-              padding: '1rem',
-              backgroundColor: balances && balances.tokens >= 100 ? '#4CAF50' : '#666',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: balances && balances.tokens >= 100 ? 'pointer' : 'not-allowed',
-              fontSize: '14px',
-              fontWeight: 'bold',
-            }}
-          >
-            Buy Item Pack
-            <br />
-            (100 🪙)
-          </button>
-          {balances && balances.tokens < 100 && (
-            <p style={{ fontSize: '12px', color: '#f44336' }}>
-              Not enough tokens
-            </p>
-          )}
-        </div>
+        {/* Left Column - Character */}
+        <div style={{
+          flex: 2,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1rem',
+          overflow: 'auto',
+        }}>
+          {/* Damage Rating */}
+          <div style={{
+            border: '2px solid #4CAF50',
+            borderRadius: '8px',
+            padding: '1.5rem',
+            backgroundColor: '#1a1a1a',
+            textAlign: 'center',
+          }}>
+            <div style={{ fontSize: '14px', color: '#888', marginBottom: '0.5rem' }}>
+              DAMAGE RATING
+            </div>
+            <div style={{ fontSize: '48px', fontWeight: 'bold', color: '#4CAF50' }}>
+              {character.damage_rating}
+            </div>
+          </div>
 
-        {/* Center - Character + Inventory */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
           {/* Character Display */}
           <div style={{
             border: '2px solid #333',
@@ -434,20 +416,69 @@ export function CharacterPage() {
               })}
             </div>
           </div>
+        </div>
+
+        {/* Right Column - Buy Item + Inventory */}
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1rem',
+          overflow: 'hidden',
+        }}>
+          {/* Buy Item Button - Highlighted */}
+          <button
+            onClick={handleBuyItem}
+            disabled={!balances || balances.tokens < 100}
+            style={{
+              padding: '1.5rem',
+              backgroundColor: balances && balances.tokens >= 100 ? '#4CAF50' : '#666',
+              color: '#fff',
+              border: balances && balances.tokens >= 100 ? '3px solid #81C784' : 'none',
+              borderRadius: '12px',
+              cursor: balances && balances.tokens >= 100 ? 'pointer' : 'not-allowed',
+              fontSize: '18px',
+              fontWeight: 'bold',
+              boxShadow: balances && balances.tokens >= 100 ? '0 0 20px rgba(76, 175, 80, 0.5)' : 'none',
+              transition: 'all 0.3s ease',
+            }}
+          >
+            Buy Item
+            <br />
+            (100 🪙)
+          </button>
+          {balances && balances.tokens < 100 && (
+            <p style={{ fontSize: '12px', color: '#f44336', textAlign: 'center', marginTop: '-0.5rem' }}>
+              Not enough tokens
+            </p>
+          )}
 
           {/* Inventory */}
           <div style={{
             border: '2px solid #333',
             borderRadius: '8px',
-            padding: '1rem',
             backgroundColor: '#1a1a1a',
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
           }}>
-            <h3 style={{ margin: '0 0 1rem 0' }}>
-              Inventory ({unequippedItems.length}/20)
-            </h3>
+            {/* Inventory Topbar */}
             <div style={{
-              maxHeight: '400px',
+              padding: '1rem',
+              borderBottom: '2px solid #333',
+              backgroundColor: '#2a2a2a',
+            }}>
+              <h3 style={{ margin: 0, fontSize: '16px' }}>
+                Inventory ({unequippedItems.length}/20)
+              </h3>
+            </div>
+
+            {/* Inventory List */}
+            <div style={{
+              flex: 1,
               overflowY: 'auto',
+              padding: '1rem',
               display: 'flex',
               flexDirection: 'column',
               gap: '0.5rem',
@@ -542,43 +573,6 @@ export function CharacterPage() {
                   );
                 })
               )}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Panel - Statistics */}
-        <div style={{
-          border: '2px solid #333',
-          borderRadius: '8px',
-          padding: '1rem',
-          backgroundColor: '#1a1a1a',
-          height: 'fit-content',
-        }}>
-          <h3 style={{ margin: '0 0 1rem 0' }}>Stats</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div>
-              <div style={{ fontSize: '12px', color: '#888' }}>Damage Rating</div>
-              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#4CAF50' }}>
-                {character.damage_rating}
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: '12px', color: '#888' }}>Tokens</div>
-              <div style={{ fontSize: '20px', fontWeight: 'bold' }}>
-                {balances?.tokens || 0} 🪙
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: '12px', color: '#888' }}>Items Equipped</div>
-              <div style={{ fontSize: '20px' }}>
-                {equipmentSummary?.equippedCount || 0} / 6
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: '12px', color: '#888' }}>Inventory Items</div>
-              <div style={{ fontSize: '20px' }}>
-                {equipmentSummary?.inventoryCount || 0} / 20
-              </div>
             </div>
           </div>
         </div>
@@ -696,66 +690,6 @@ export function CharacterPage() {
         );
       })()}
 
-      {/* Gacha Confirmation Modal */}
-      {showGachaConfirm && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-        }}>
-          <div style={{
-            backgroundColor: '#1a1a1a',
-            border: '2px solid #333',
-            borderRadius: '8px',
-            padding: '2rem',
-            maxWidth: '400px',
-            textAlign: 'center',
-          }}>
-            <h3 style={{ margin: '0 0 1rem 0' }}>Purchase Item Pack?</h3>
-            <p style={{ marginBottom: '2rem', color: '#ccc' }}>
-              This will cost 100 tokens. You will receive one random item.
-            </p>
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-              <button
-                onClick={handleConfirmBuy}
-                style={{
-                  padding: '0.75rem 2rem',
-                  backgroundColor: '#4CAF50',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontWeight: 'bold',
-                }}
-              >
-                Yes
-              </button>
-              <button
-                onClick={handleCancelBuy}
-                style={{
-                  padding: '0.75rem 2rem',
-                  backgroundColor: '#f44336',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontWeight: 'bold',
-                }}
-              >
-                No
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Gacha Card Selection Modal */}
       {showGachaSelection && (
         <div style={{
@@ -837,171 +771,147 @@ export function CharacterPage() {
         }}>
           <h2 style={{ marginBottom: '2rem', color: '#fff' }}>You Received!</h2>
 
-          {/* Revealed Card */}
+          {/* All 3 Cards in Original Positions */}
           <div style={{
-            width: '250px',
-            minHeight: '350px',
-            backgroundColor: '#2a2a2a',
-            border: `3px solid ${getRarityColor(revealedItem.rarity)}`,
-            borderRadius: '12px',
-            padding: '1.5rem',
+            display: 'flex',
+            gap: '2rem',
             marginBottom: '2rem',
-            boxShadow: `0 0 30px ${getRarityColor(revealedItem.rarity)}80`,
           }}>
-            <div style={{
-              fontSize: '64px',
-              textAlign: 'center',
-              marginBottom: '1rem',
-            }}>
-              {getCategoryIcon(revealedItem.item.category)}
-            </div>
-            <div style={{
-              textAlign: 'center',
-              marginBottom: '1rem',
-            }}>
-              <div style={{
-                fontSize: '18px',
-                fontWeight: 'bold',
-                marginBottom: '0.5rem',
-                color: '#fff',
-              }}>
-                {revealedItem.item.item_name}
-              </div>
-              <div style={{
-                fontSize: '14px',
-                color: getRarityColor(revealedItem.rarity),
-                fontWeight: 'bold',
-                textTransform: 'uppercase',
-                marginBottom: '0.5rem',
-              }}>
-                {revealedItem.rarity}
-              </div>
-              <div style={{
-                fontSize: '12px',
-                color: '#888',
-                textTransform: 'capitalize',
-                marginBottom: '1rem',
-              }}>
-                {revealedItem.item.category}
-              </div>
-              <div style={{
-                fontSize: '24px',
-                color: '#4CAF50',
-                fontWeight: 'bold',
-              }}>
-                {revealedItem.item.dmg * (
-                  revealedItem.rarity === 'common' ? 1 :
-                  revealedItem.rarity === 'rare' ? 1.2 :
-                  revealedItem.rarity === 'epic' ? 1.5 : 2
-                )} DMG
-              </div>
-            </div>
-          </div>
+            {[0, 1, 2].map((index) => {
+              const isSelected = index === selectedCardIndex;
+              const isRevealed = isSelected || revealedOtherCards.has(index);
+              const item = offeredItems[index];
 
-          {/* Other Cards */}
-          {showOtherCards && (
-            <div style={{
-              display: 'flex',
-              gap: '1rem',
-              marginBottom: '2rem',
-            }}>
-              {offeredItems.filter((_, idx) => idx !== selectedCardIndex).map((item, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    width: '180px',
-                    minHeight: '250px',
-                    backgroundColor: '#2a2a2a',
-                    border: `2px solid ${getRarityColor(item.rarity)}`,
-                    borderRadius: '8px',
-                    padding: '1rem',
-                    opacity: 0.7,
-                  }}
-                >
-                  <div style={{
-                    fontSize: '48px',
-                    textAlign: 'center',
-                    marginBottom: '0.5rem',
-                  }}>
-                    {getCategoryIcon(item.item.category)}
+              if (isRevealed && item) {
+                // Show revealed card
+                return (
+                  <div
+                    key={index}
+                    style={{
+                      width: isSelected ? '250px' : '220px',
+                      minHeight: isSelected ? '350px' : '310px',
+                      backgroundColor: '#2a2a2a',
+                      border: `3px solid ${getRarityColor(item.rarity)}`,
+                      borderRadius: '12px',
+                      padding: '1.5rem',
+                      boxShadow: isSelected ? `0 0 30px ${getRarityColor(item.rarity)}80` : 'none',
+                      opacity: isSelected ? 1 : 0.7,
+                      transition: 'all 0.3s ease',
+                    }}
+                  >
+                    <div style={{
+                      fontSize: isSelected ? '64px' : '48px',
+                      textAlign: 'center',
+                      marginBottom: '1rem',
+                    }}>
+                      {getCategoryIcon(item.item.category)}
+                    </div>
+                    <div style={{
+                      textAlign: 'center',
+                      marginBottom: '1rem',
+                    }}>
+                      <div style={{
+                        fontSize: isSelected ? '18px' : '14px',
+                        fontWeight: 'bold',
+                        marginBottom: '0.5rem',
+                        color: '#fff',
+                      }}>
+                        {item.item.item_name}
+                      </div>
+                      <div style={{
+                        fontSize: isSelected ? '14px' : '12px',
+                        color: getRarityColor(item.rarity),
+                        fontWeight: 'bold',
+                        textTransform: 'uppercase',
+                        marginBottom: '0.5rem',
+                      }}>
+                        {item.rarity}
+                      </div>
+                      <div style={{
+                        fontSize: isSelected ? '12px' : '10px',
+                        color: '#888',
+                        textTransform: 'capitalize',
+                        marginBottom: '1rem',
+                      }}>
+                        {item.item.category}
+                      </div>
+                      <div style={{
+                        fontSize: isSelected ? '24px' : '18px',
+                        color: '#4CAF50',
+                        fontWeight: 'bold',
+                      }}>
+                        {item.item.dmg * (
+                          item.rarity === 'common' ? 1 :
+                          item.rarity === 'rare' ? 1.2 :
+                          item.rarity === 'epic' ? 1.5 : 2
+                        )} DMG
+                      </div>
+                    </div>
                   </div>
-                  <div style={{ textAlign: 'center' }}>
+                );
+              } else {
+                // Show hidden card with "click to reveal"
+                return (
+                  <div
+                    key={index}
+                    onClick={() => handleRevealOtherCard(index)}
+                    style={{
+                      width: '220px',
+                      minHeight: '310px',
+                      backgroundColor: '#2a2a2a',
+                      border: '2px solid #444',
+                      borderRadius: '12px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.3s ease',
+                      opacity: 0.5,
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.opacity = '0.8';
+                      e.currentTarget.style.borderColor = '#666';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.opacity = '0.5';
+                      e.currentTarget.style.borderColor = '#444';
+                    }}
+                  >
+                    <div style={{
+                      fontSize: '64px',
+                      marginBottom: '1rem',
+                    }}>
+                      ?
+                    </div>
                     <div style={{
                       fontSize: '14px',
-                      fontWeight: 'bold',
-                      marginBottom: '0.25rem',
-                      color: '#fff',
-                    }}>
-                      {item.item.item_name}
-                    </div>
-                    <div style={{
-                      fontSize: '12px',
-                      color: getRarityColor(item.rarity),
-                      fontWeight: 'bold',
-                      textTransform: 'uppercase',
-                      marginBottom: '0.25rem',
-                    }}>
-                      {item.rarity}
-                    </div>
-                    <div style={{
-                      fontSize: '10px',
                       color: '#888',
-                      textTransform: 'capitalize',
-                      marginBottom: '0.5rem',
+                      textAlign: 'center',
                     }}>
-                      {item.item.category}
-                    </div>
-                    <div style={{
-                      fontSize: '18px',
-                      color: '#4CAF50',
-                      fontWeight: 'bold',
-                    }}>
-                      {item.item.dmg * (
-                        item.rarity === 'common' ? 1 :
-                        item.rarity === 'rare' ? 1.2 :
-                        item.rarity === 'epic' ? 1.5 : 2
-                      )} DMG
+                      Click to reveal
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            {!showOtherCards && (
-              <button
-                onClick={handleShowOtherCards}
-                style={{
-                  padding: '0.75rem 2rem',
-                  backgroundColor: '#2196F3',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '16px',
-                  fontWeight: 'bold',
-                }}
-              >
-                Show Other Cards
-              </button>
-            )}
-            <button
-              onClick={handleCollect}
-              style={{
-                padding: '0.75rem 2rem',
-                backgroundColor: '#4CAF50',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '16px',
-                fontWeight: 'bold',
-              }}
-            >
-              Collect
-            </button>
+                );
+              }
+            })}
           </div>
+
+          <button
+            onClick={handleCollect}
+            style={{
+              padding: '1rem 3rem',
+              backgroundColor: '#4CAF50',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '18px',
+              fontWeight: 'bold',
+            }}
+          >
+            Collect
+          </button>
         </div>
       )}
 
@@ -1099,6 +1009,6 @@ export function CharacterPage() {
           </div>
         );
       })()}
-    </>
+    </Layout>
   );
 }

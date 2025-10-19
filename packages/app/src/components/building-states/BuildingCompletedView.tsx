@@ -60,36 +60,22 @@ export function BuildingCompletedView({ building, onUpdate }: BuildingCompletedV
       <div className="success-banner">
         <div className="success-icon">🎉</div>
         <div className="success-message">
-          <h3>Trade Successful!</h3>
-          <p>You survived the trade and earned rewards</p>
+          <h3>You survived!</h3>
+          <p>You get energy refund</p>
         </div>
       </div>
 
       <div className="reward-details">
         <div className="reward-item">
           <span className="reward-label">Tokens Earned</span>
-          <span className="reward-value tokens">{trade.tokensReward || 0} 🎁</span>
+          <span className="reward-value tokens">{trade.tokensReward || 0} 🪙</span>
         </div>
         <div className="reward-item">
           <span className="reward-label">Energy Refund</span>
           <span className="reward-value energy">{trade.energySpent} ⚡</span>
         </div>
       </div>
-
-      <div className="trade-summary-completed">
-        <div className="summary-item">
-          <span>Risk Mode:</span>
-          <span>{trade.riskMode.toUpperCase()}</span>
-        </div>
-        <div className="summary-item">
-          <span>Entry Price:</span>
-          <span>${trade.entryPrice.toFixed(2)}</span>
-        </div>
-        <div className="summary-item">
-          <span>Final Price:</span>
-          <span>${trade.entryPrice.toFixed(2)}</span>
-        </div>
-      </div>
+    
 
       {error && <div className="error-message">{error}</div>}
 

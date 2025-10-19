@@ -190,7 +190,7 @@ class ApiClient {
   async getCharacterDungeonStats(characterId: string) {
     return this.request<{
       totalDamage: number;
-      totalTokens: number;
+      totalUsdc: number;
       totalRuns: number;
     }>(`/dungeon/character/${characterId}/stats`);
   }
@@ -208,7 +208,7 @@ class ApiClient {
   async claimDungeonReward(characterDungeonId: string, userId: string) {
     return this.request<{
       message: string;
-      tokensAwarded: number;
+      usdcAwarded: number;
       characterDungeon: any;
     }>('/dungeon/claim', {
       method: 'POST',
@@ -219,7 +219,7 @@ class ApiClient {
   async claimAllDungeonRewards(characterId: string, userId: string) {
     return this.request<{
       message: string;
-      totalTokens: number;
+      totalUsdc: number;
       claimedCount: number;
       dungeons: any[];
     }>('/dungeon/claim-all', {

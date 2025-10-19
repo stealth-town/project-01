@@ -141,9 +141,12 @@ $gray-800: #1a202c;
 // Town Page
 .town-page {
   min-height: 100vh;
+  max-width: 100vw;
   background: linear-gradient(to bottom, $gray-50 0%, $gray-100 100%);
   display: flex;
   flex-direction: column;
+  overflow-x: hidden; // Prevent horizontal scrollbar
+  overflow-y: auto; // Allow vertical scrolling
 
   .town-header {
     background: white;
@@ -199,14 +202,22 @@ $gray-800: #1a202c;
     max-width: 1600px;
     margin: 0 auto;
     width: 100%;
-    padding: 2rem 1.5rem;
+    padding: 1rem;
     display: grid;
-    grid-template-columns: 400px 1fr;
-    gap: 2rem;
+    grid-template-columns: minmax(300px, 25%) 1fr; // Dynamic left panel (25% width, min 300px)
+    gap: 1.5rem;
     flex: 1;
+    box-sizing: border-box;
+    overflow-x: hidden; // Prevent horizontal overflow
+
+    @media (max-width: 1400px) {
+      grid-template-columns: minmax(280px, 30%) 1fr; // Slightly wider on medium screens
+      gap: 1rem;
+    }
 
     @media (max-width: 1024px) {
       grid-template-columns: 1fr;
+      padding: 0.75rem;
 
       .shops-panel {
         order: 2;
@@ -286,10 +297,15 @@ $gray-800: #1a202c;
   @extend %card;
   margin-bottom: 1.5rem;
 
+  h2 {
+    font-size: 1.125rem;
+    margin-bottom: 0.75rem;
+  }
+
   .packages-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 0.75rem;
+    gap: 0.5rem;
 
     @media (max-width: 768px) {
       grid-template-columns: 1fr;
@@ -298,10 +314,11 @@ $gray-800: #1a202c;
     .package-card {
       border: 2px solid $gray-200;
       border-radius: 8px;
-      padding: 1rem;
+      padding: 0.75rem;
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
+      gap: 0.5rem;
+      min-width: 0; // Allow flex items to shrink below content size
 
       &:not(.disabled):hover {
         border-color: $primary;
@@ -314,40 +331,57 @@ $gray-800: #1a202c;
       .package-header {
         display: flex;
         justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+        min-width: 0;
 
         .package-name {
           font-weight: 600;
           color: $gray-700;
+          font-size: 0.875rem;
+          flex-shrink: 0;
         }
 
         .package-energy {
-          font-size: 1.25rem;
+          font-size: 1.125rem;
           font-weight: 700;
           color: #f59e0b;
+          white-space: nowrap;
+          flex-shrink: 0;
         }
       }
 
       .package-price {
-        font-size: 1.125rem;
+        font-size: 1rem;
         font-weight: 700;
         color: $primary;
+        text-align: center;
       }
 
       .purchase-button {
-        padding: 0.5rem;
+        padding: 0.5rem 0.25rem;
         background: linear-gradient(135deg, $primary 0%, $primary-dark 100%);
         color: white;
         border: none;
         border-radius: 6px;
         font-weight: 600;
         cursor: pointer;
+        font-size: 0.875rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
 
         &:disabled {
           opacity: 0.5;
           cursor: not-allowed;
+          font-size: 0.75rem;
         }
       }
     }
+  }
+
+  .shop-error {
+    margin-top: 0.75rem;
   }
 }
 
@@ -459,7 +493,7 @@ $gray-800: #1a202c;
 
     p {
       margin: 0;
-      color: #718096;
+      color: #e2e4e8;
     }
   }
 }
@@ -542,70 +576,9 @@ $gray-800: #1a202c;
 
 // Building Idle View
 .building-idle-view {
-  .risk-modes {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    margin: 1rem 0;
-
-    .risk-mode-button {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 1rem;
-      border: 2px solid $gray-200;
-      border-radius: 8px;
-      background: white;
-      cursor: pointer;
-
-      &.selected {
-        border-width: 3px;
-      }
-
-      &.disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-
-      .risk-icon {
-        font-size: 2rem;
-      }
-
-      .risk-info {
-        flex: 1;
-
-        .risk-name {
-          display: block;
-          font-weight: 600;
-          color: $gray-700;
-        }
-
-        .risk-stats {
-          display: flex;
-          gap: 1rem;
-          font-size: 0.875rem;
-          color: $gray-600;
-          margin-top: 0.5rem;
-        }
-      }
-    }
-  }
-
-  .start-trade-button {
-    width: 100%;
-    padding: 0.875rem;
-    background: linear-gradient(135deg, $primary 0%, $primary-dark 100%);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-top: 1rem;
-
-    &:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
+  h2 {
+    color: #f3f4f6;
+    font-size: 1.25rem;
   }
 }
 
@@ -821,12 +794,16 @@ $gray-800: #1a202c;
     gap: 1rem;
     margin-bottom: 1rem;
 
+    @media (max-width: 1024px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
     @media (max-width: 640px) {
       grid-template-columns: 1fr;
     }
 
     .detail-row {
-      background: $gray-50;
+      background: rgba(42, 42, 62, 0.4);
       border: 2px solid #fed7d7;
       border-radius: 8px;
       padding: 1rem;
@@ -835,15 +812,16 @@ $gray-800: #1a202c;
       .detail-label {
         display: block;
         font-size: 0.75rem;
-        color: #718096;
+        color: #d1d5db;
         text-transform: uppercase;
+        font-weight: 600;
       }
 
       .detail-value {
         display: block;
         font-size: 1.75rem;
         font-weight: 700;
-        color: $danger;
+        color: #d1d5db;
         margin-top: 0.5rem;
       }
     }
@@ -893,61 +871,131 @@ $gray-800: #1a202c;
 .trading-layout {
   display: flex;
   gap: 1.5rem;
-  height: 100%;
-  min-height: 700px;
+  height: auto; // Let content dictate height
+  min-height: 500px; // Ensure good height
+  width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 1400px) {
+    gap: 1rem;
+    min-height: 450px;
+  }
+
+  @media (max-width: 1024px) {
+    gap: 0.75rem;
+    min-height: 400px;
+  }
 }
 
 /* Building Sidebar */
 .building-sidebar {
-  width: 280px;
+  width: clamp(180px, 20%, 240px); // Dynamic width: min 180px, max 240px, 20% of container
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  padding: 1rem;
-  background: rgba(26, 26, 46, 0.5);
-  border-radius: 0.75rem;
+  padding: 1.5rem;
+  background: white; // Match card style
+  border-radius: 12px; // Match card style
   overflow-y: auto;
-  max-height: calc(100vh - 200px);
+  max-height: 100%; // Match parent height
+  min-height: 650px; // Increased from 0 to make it taller
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); // Match card style
+  box-sizing: border-box;
+
+  @media (max-width: 1400px) {
+    padding: 1.25rem;
+    gap: 0.625rem;
+    min-height: 600px;
+  }
+
+  @media (max-width: 1024px) {
+    width: clamp(160px, 25%, 200px);
+    padding: 1rem;
+    gap: 0.5rem;
+    min-height: 550px;
+  }
 }
 
 .sidebar-header {
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 600;
-  color: #9ca3af;
+  color: $gray-800; // Dark text on white background
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid rgba(102, 126, 234, 0.1); // Purple accent border
 }
 
 /* Building Slot Item */
 .building-slot-item {
   padding: 1rem;
-  border-radius: 0.5rem;
+  border-radius: 8px;
   cursor: pointer;
-  border: 2px solid transparent;
+  border: 2px solid $gray-200; // Light border on white
   transition: all 0.2s;
-  background: rgba(42, 42, 62, 0.4);
+  background: $gray-50; // Very light gray background
   display: flex;
   align-items: center;
   gap: 0.75rem;
 
+  @media (max-width: 1400px) {
+    padding: 0.875rem;
+    gap: 0.625rem;
+  }
+
+  @media (max-width: 1300px) {
+    padding: 0.75rem;
+    gap: 0.5rem;
+  }
+
   &:hover:not(.empty) {
-    background: rgba(42, 42, 62, 0.7);
+    background: white;
+    border-color: $primary;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
   }
 
   &.selected {
-    border-color: #3b82f6;
-    background: rgba(59, 130, 246, 0.1);
+    border-color: $primary;
+    border-width: 3px; // Thicker border for selected
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.1) 100%); // More prominent purple background
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2), 0 4px 12px rgba(102, 126, 234, 0.25); // Stronger outer glow and shadow
+    transform: scale(1.02); // Slight scale for emphasis
   }
 
   &.empty {
-    opacity: 0.6;
+    opacity: 0.5;
     cursor: default;
+    background: white;
+    border-style: dashed;
 
     &:hover {
-      background: rgba(42, 42, 62, 0.4);
+      background: white;
+      border-color: $gray-200;
+      box-shadow: none;
     }
+  }
+
+  // Status-based border colors for better visibility
+  &.idle {
+    border-color: $success;
+    background: linear-gradient(135deg, #e8f5e9 0%, rgba(229, 246, 231, 0.5) 100%);
+  }
+
+  &.active {
+    border-color: $primary;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%);
+  }
+
+  &.completed {
+    border-color: $success;
+    background: linear-gradient(135deg, #e8f5e9 0%, rgba(229, 246, 231, 0.8) 100%);
+  }
+
+  &.liquidated {
+    border-color: $danger;
+    background: linear-gradient(135deg, #fed7d7 0%, rgba(254, 215, 215, 0.5) 100%);
   }
 
   .slot-number {
@@ -957,9 +1005,16 @@ $gray-800: #1a202c;
     min-width: 36px;
     height: 36px;
     border-radius: 0.375rem;
-    background: rgba(59, 130, 246, 0.2);
+    background: linear-gradient(135deg, $primary 0%, $primary-dark 100%); // Purple gradient
     font-weight: 700;
-    color: #3b82f6;
+    color: white;
+    font-size: 1.125rem;
+
+    @media (max-width: 1300px) {
+      min-width: 32px;
+      height: 32px;
+      font-size: 1rem;
+    }
   }
 
   .slot-content {
@@ -970,12 +1025,22 @@ $gray-800: #1a202c;
 
     .slot-title {
       font-weight: 600;
-      color: #e5e7eb;
+      color: $gray-800; // Dark text on light background
+      font-size: 0.9375rem;
+
+      @media (max-width: 1300px) {
+        font-size: 0.875rem;
+      }
     }
 
     .slot-status {
       font-size: 0.75rem;
-      color: #9ca3af;
+      color: $gray-600; // Medium gray
+      font-weight: 500;
+
+      @media (max-width: 1300px) {
+        font-size: 0.6875rem;
+      }
     }
   }
 
@@ -986,27 +1051,32 @@ $gray-800: #1a202c;
   }
 
   .status-dot {
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
+    box-shadow: 0 0 6px currentColor;
   }
 
   &.idle .status-dot {
-    background: #10b981;
+    background: $success;
+    color: $success;
   }
 
   &.active .status-dot {
-    background: #3b82f6;
+    background: $primary;
+    color: $primary;
     animation: pulse 2s infinite;
   }
 
   &.completed .status-dot {
-    background: #10b981;
+    background: $success;
+    color: $success;
     animation: pulse 1.5s infinite;
   }
 
   &.liquidated .status-dot {
-    background: #ef4444;
+    background: $danger;
+    color: $danger;
     animation: pulse 1.5s infinite;
   }
 }
@@ -1024,13 +1094,45 @@ $gray-800: #1a202c;
 
 /* Trading Main Content */
 .trading-main-content {
-  flex: 1;
+  flex: 1 1 auto; // Allow shrinking and growing
+  min-height: 650px; // Increased from 500px to make it taller
   display: flex;
   flex-direction: column;
   padding: 1.5rem;
-  background: rgba(26, 26, 46, 0.3);
-  border-radius: 0.75rem;
-  min-height: 600px;
+  background: white; // Match card style
+  border-radius: 12px; // Match card style
+  max-width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); // Match card style
+  box-sizing: border-box;
+
+  @media (max-width: 1400px) {
+    padding: 1.25rem;
+    min-height: 600px;
+  }
+
+  @media (max-width: 1024px) {
+    padding: 1rem;
+    min-height: 550px;
+  }
+}
+
+/* Building Header */
+.building-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid rgba(102, 126, 234, 0.1); // Purple accent border
+
+  .building-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, $primary 0%, $primary-dark 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0;
+  }
 }
 
 .empty-state {
@@ -1039,15 +1141,17 @@ $gray-800: #1a202c;
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: #9ca3af;
+  color: $gray-600;
 
   h2 {
     font-size: 1.5rem;
     margin-bottom: 0.5rem;
+    color: $gray-800;
   }
 
   p {
     font-size: 1rem;
+    color: $gray-600;
   }
 }
 
@@ -1055,78 +1159,124 @@ $gray-800: #1a202c;
 .mode-selection-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
-  margin-top: 2rem;
+  gap: 1rem;
+  margin-top: 1rem;
 
-  @media (max-width: 1200px) {
+  // Switch to 1 column earlier for better fit on smaller screens (e.g., 1300x700)
+  @media (max-width: 1440px) {
     grid-template-columns: 1fr;
+    gap: 0.75rem;
   }
 }
 
 .mode-card {
-  padding: 2rem;
-  border-radius: 1rem;
-  background: rgba(42, 42, 62, 0.6);
-  border: 3px solid transparent;
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  background: white; // White background to match UI theme
+  border: 2px solid $gray-200; // Light border
   transition: all 0.3s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); // Subtle shadow
 
   &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 16px rgba(59, 130, 246, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(102, 126, 234, 0.15); // Purple shadow on hover
   }
 
   &.mode-turtle {
     border-color: rgba(16, 185, 129, 0.3);
-    &:hover { border-color: #10b981; }
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(16, 185, 129, 0.02) 100%); // Light green tint
+
+    &:hover {
+      border-color: #10b981;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+      box-shadow: 0 8px 16px rgba(16, 185, 129, 0.2); // Green shadow on hover
+    }
   }
 
   &.mode-walk {
-    border-color: rgba(59, 130, 246, 0.3);
-    &:hover { border-color: #3b82f6; }
+    border-color: rgba(102, 126, 234, 0.3);
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.02) 100%); // Light purple tint
+
+    &:hover {
+      border-color: $primary;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%);
+      box-shadow: 0 8px 16px rgba(102, 126, 234, 0.25); // Purple shadow on hover
+    }
   }
 
   &.mode-cheetah {
     border-color: rgba(239, 68, 68, 0.3);
-    &:hover { border-color: #ef4444; }
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(239, 68, 68, 0.02) 100%); // Light red tint
+
+    &:hover {
+      border-color: #ef4444;
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+      box-shadow: 0 8px 16px rgba(239, 68, 68, 0.2); // Red shadow on hover
+    }
   }
 }
 
 .mode-header {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
 
   .mode-icon {
-    font-size: 3rem;
+    font-size: 2.5rem;
   }
 
   h3 {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     font-weight: 700;
-    color: #e5e7eb;
+    color: $gray-800; // Dark text on white background
   }
 }
 
 .mode-stats {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
 
   .stat {
     display: flex;
     justify-content: space-between;
+    align-items: center;
 
     .label {
-      color: #9ca3af;
+      color: $gray-600; // Medium gray for labels
       font-size: 0.875rem;
+      font-weight: 500;
     }
 
     .value {
-      font-weight: 600;
-      color: #e5e7eb;
+      font-weight: 700;
+      color: $gray-800; // Dark text for values
+      font-size: 1rem;
     }
+  }
+}
+
+.start-trade-button {
+  width: 100%;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, $primary 0%, $primary-dark 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.875rem;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
   }
 }
 
@@ -1181,57 +1331,147 @@ $gray-800: #1a202c;
 /* Trade Topbar (Clean Info Bar) */
 .trade-topbar {
   display: flex;
-  gap: 1.5rem;
-  padding: 1.5rem;
-  background: rgba(26, 26, 46, 0.6);
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: $gray-50; // Light gray background to match UI theme
+  border: 2px solid rgba(102, 126, 234, 0.1); // Subtle purple border
   border-radius: 0.75rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); // Subtle shadow
+
+  @media (max-width: 1400px) {
+    gap: 0.5rem;
+    padding: 0.875rem 1rem;
+  }
 
   @media (max-width: 1024px) {
-    gap: 1rem;
+    gap: 0.5rem;
+    padding: 0.75rem 0.875rem;
   }
 
   .topbar-item {
     display: flex;
     flex-direction: column;
-    gap: 0.375rem;
-    min-width: 100px;
+    gap: 0.25rem;
+    min-width: 0; // Allow items to shrink below content size
+    flex: 1 1 auto; // Allow flexible sizing and wrapping
+    max-width: 150px; // Prevent items from getting too wide
+
+    @media (max-width: 1400px) {
+      max-width: 120px;
+    }
 
     .label {
-      font-size: 0.75rem;
-      color: #9ca3af;
+      font-size: 0.6875rem;
+      color: $gray-600; // Medium gray for labels
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.03em;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .value {
-      font-size: 1.125rem;
+      font-size: 1rem;
       font-weight: 700;
-      color: #e5e7eb;
+      color: $gray-800; // Dark text for values
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      @media (max-width: 1400px) {
+        font-size: 0.9375rem;
+      }
 
       &.timer {
-        color: #3b82f6;
+        color: $primary; // Purple for timer
         font-variant-numeric: tabular-nums;
       }
 
       &.positive {
-        color: #10b981;
+        color: #10b981; // Green for positive
       }
 
       &.negative {
-        color: #ef4444;
+        color: #ef4444; // Red for negative
       }
 
       &.danger {
-        color: #ef4444;
+        color: #ef4444; // Red for danger
       }
 
       .change {
         display: block;
-        font-size: 0.875rem;
-        margin-top: 0.25rem;
+        font-size: 0.75rem;
+        margin-top: 0.125rem;
+        font-weight: 600;
       }
+    }
+  }
+}
+
+/* Emphasized Timer Section */
+.trade-timer-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.875rem;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, rgba(227, 134, 250, 0.15) 0%, rgba(37, 99, 235, 0.1) 100%);
+  border: 2px solid rgba(59, 130, 246, 0.3);
+  border-radius: 0.75rem;
+  margin-bottom: 1rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  .timer-label {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #000000;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+  }
+
+  .timer-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #000000;
+    font-variant-numeric: tabular-nums;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Droid Sans Mono', monospace;
+    text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+    white-space: nowrap;
+  }
+
+  @media (max-width: 1400px) {
+    padding: 0.875rem 1rem;
+    gap: 0.75rem;
+
+    .timer-label {
+      font-size: 1rem;
+    }
+
+    .timer-value {
+      font-size: 1.75rem;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    padding: 0.75rem 0.875rem;
+    gap: 0.5rem;
+
+    .timer-label {
+      font-size: 0.9375rem;
+    }
+
+    .timer-value {
+      font-size: 1.5rem;
     }
   }
 }
@@ -1276,10 +1516,21 @@ $gray-800: #1a202c;
 .trading-chart-container {
   position: relative;
   width: 100%;
+  max-width: 100%; // Prevent overflow
   background: rgba(26, 26, 46, 0.4);
   border-radius: 0.75rem;
-  padding: 1rem;
-  min-height: 450px;
+  padding: 0.75rem;
+  min-height: auto;
+  box-sizing: border-box;
+  overflow: hidden; // Prevent overflow
+
+  @media (max-width: 1400px) {
+    padding: 0.625rem;
+  }
+
+  @media (max-width: 1024px) {
+    padding: 0.5rem;
+  }
 
   .chart-loading {
     position: absolute;
@@ -1313,7 +1564,12 @@ $gray-800: #1a202c;
 
   .chart {
     width: 100%;
-    height: 450px;
+    max-width: 100%;
+    box-sizing: border-box;
+    // Height is set dynamically by JavaScript based on viewport
+    // Small screens (≤768px): 300px
+    // Medium screens (≤900px): 350px
+    // Large screens: 400px
   }
 }
 

@@ -161,7 +161,7 @@ router.post("/claim", async (req: Request, res: Response) => {
 
     res.json({
       message: "Reward claimed successfully",
-      tokensAwarded: result.tokens,
+      usdcAwarded: result.usdc,
       characterDungeon: result.characterDungeon,
     });
   } catch (error: any) {
@@ -211,7 +211,7 @@ router.post("/claim-all", async (req: Request, res: Response) => {
 
     res.json({
       message: "All rewards claimed successfully",
-      totalTokens: result.totalTokens,
+      totalUsdc: result.totalUsdc,
       claimedCount: result.claimedCount,
       dungeons: result.dungeons,
     });

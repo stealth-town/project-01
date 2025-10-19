@@ -16,6 +16,8 @@ export function BuildingActiveView({ building }: BuildingActiveViewProps) {
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [currentPrice, setCurrentPrice] = useState<number>(0);
 
+  console.log('[BuildingActiveView] Rendering with currentPrice:', currentPrice);
+
   // Load trade
   useEffect(() => {
     const loadTrade = async () => {
@@ -54,13 +56,19 @@ export function BuildingActiveView({ building }: BuildingActiveViewProps) {
     return () => clearInterval(interval);
   }, [trade]);
 
-  // Live price updates
+  // Live price updates via WebSocket
   useEffect(() => {
-    const unsubscribe = priceService.subscribeToPriceUpdates('ETH', (price) => {
-      setCurrentPrice(price);
-    }, 1000); // Update every 1 seconds
+    console.log('[BuildingActiveView] Subscribing to price updates...');
 
-    return unsubscribe;
+    const unsubscribe = priceService.subscribeToPriceUpdates('ETH', (price) => {
+      console.log('[BuildingActiveView] Received price update:', price);
+      setCurrentPrice(price);
+    }, 1000); // Interval parameter unused (WebSocket is real-time)
+
+    return () => {
+      console.log('[BuildingActiveView] Unsubscribing from price updates');
+      unsubscribe();
+    };
   }, []);
 
   const formatTime = (ms: number) => {
@@ -95,11 +103,6 @@ export function BuildingActiveView({ building }: BuildingActiveViewProps) {
         </div>
 
         <div className="topbar-item">
-          <span className="label">Time Left</span>
-          <span className="value timer">{formatTime(timeRemaining)}</span>
-        </div>
-
-        <div className="topbar-item">
           <span className="label">Entry</span>
           <span className="value">${trade.entryPrice.toFixed(2)}</span>
         </div>
@@ -120,12 +123,20 @@ export function BuildingActiveView({ building }: BuildingActiveViewProps) {
         </div>
       </div>
 
+      {/* Emphasized Timer Section */}
+      <div className="trade-timer-section">
+        <span className="timer-label">Survive for:</span>
+        <span className="timer-value">{formatTime(timeRemaining)}</span>
+      </div>
+
       {/* Real Trading Chart */}
       <TradingChart
         entryPrice={trade.entryPrice}
         liquidationPrice={trade.liquidationPrice}
         tradeStartTime={tradeStartTime}
         tradeEndTime={tradeEndTime}
+        riskMode={trade.riskMode}
+        currentPrice={currentPrice}
       />
     </div>
   );

@@ -9,7 +9,7 @@
   },
   "scripts": {
     "start": "node dist/index.js",
-    "dev": "tsx src/index.ts --watch",
+    "dev": "tsc && node dist/index.js",
     "build": "tsc"
   }
 }

@@ -26,6 +26,11 @@ export function TradingMainContent({ selectedBuilding, balances, onUpdate }: Tra
   // Render appropriate view based on building status
   return (
     <div className="trading-main-content">
+      {/* Building Number Header */}
+      <div className="building-header">
+        <h3 className="building-number">Building #{selectedBuilding.slotNumber}</h3>
+      </div>
+
       {selectedBuilding.status === 'idle' && (
         <BuildingIdleView building={selectedBuilding} balances={balances} onUpdate={onUpdate} />
       )}
