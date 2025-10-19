@@ -23,7 +23,7 @@ export class PriceService {
   private readonly CACHE_TTL = 5000; // 5 seconds
   private wsConnections: Map<string, WebSocket> = new Map();
   private subscribers: Map<string, Set<(price: number) => void>> = new Map();
-  private reconnectTimeouts: Map<string, NodeJS.Timeout> = new Map();
+  private reconnectTimeouts: Map<string, number> = new Map();
 
   /**
    * Get current price for a symbol from Binance REST API

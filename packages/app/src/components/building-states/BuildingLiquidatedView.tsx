@@ -55,11 +55,6 @@ export function BuildingLiquidatedView({ building, onUpdate }: BuildingLiquidate
     return <div className="building-liquidated-view loading">Loading trade data...</div>;
   }
 
-  const priceDropPercent = (
-    ((trade.entryPrice - trade.liquidationPrice) / trade.entryPrice) *
-    100
-  ).toFixed(1);
-
   // Calculate time saved
   const totalDuration = RISK_MODE_CONFIG[trade.riskMode].duration; // in seconds
   const startTime = new Date(trade.startedAt || trade.createdAt).getTime();

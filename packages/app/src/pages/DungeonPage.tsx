@@ -41,7 +41,6 @@ export function DungeonPage() {
   const [combatLog, setCombatLog] = useState<DungeonEvent[]>([]);
   const [unclaimedDungeons, setUnclaimedDungeons] = useState<CharacterDungeon[]>([]);
   const [stats, setStats] = useState<{ totalDamage: number; totalUsdc: number; totalRuns: number } | null>(null);
-  const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [nextDungeonTime, setNextDungeonTime] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const logEndRef = useRef<HTMLDivElement>(null);
@@ -215,7 +214,6 @@ export function DungeonPage() {
         const now = Date.now();
         const remaining = Math.max(0, endTime - now);
 
-        setTimeRemaining(remaining);
         setNextDungeonTime(remaining); // Next dungeon starts when current ends
 
         // Reload data when dungeon finishes
