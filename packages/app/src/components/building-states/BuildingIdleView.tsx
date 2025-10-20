@@ -47,14 +47,14 @@ export function BuildingIdleView({ building, balances, onUpdate }: BuildingIdleV
           marginBottom: '0.5rem',
           lineHeight: '1.5'
         }}>
-          If you survive the trade duration you will get <strong style={{ fontWeight: 700 }}>energy refund</strong>
+          If you survive the trade duration, you'll receive an <strong style={{ fontWeight: 700 }}>energy refund</strong>
         </p>
         <p style={{
           color: '#ef4444',
           fontSize: '0.875rem',
           lineHeight: '1.5'
         }}>
-          If you get <strong style={{ fontWeight: 700 }}>liquidated</strong> you will get token <strong style={{ fontWeight: 700 }}>rewards faster</strong>
+          If you get <strong style={{ fontWeight: 700 }}>liquidated</strong>, you'll earn token rewards <strong style={{ fontWeight: 700 }}>faster</strong>
         </p>
       </div>
 

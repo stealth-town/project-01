@@ -8,16 +8,26 @@ interface TradingMainContentProps {
   selectedBuilding: TownBuilding | null;
   balances: UserBalances;
   onUpdate: () => void;
+  hasAnyBuildings: boolean;
 }
 
-export function TradingMainContent({ selectedBuilding, balances, onUpdate }: TradingMainContentProps) {
+export function TradingMainContent({ selectedBuilding, balances, onUpdate, hasAnyBuildings }: TradingMainContentProps) {
   // No building selected
   if (!selectedBuilding) {
     return (
       <div className="trading-main-content">
         <div className="empty-state">
-          <h2>Select a Building to Start Trading</h2>
-          <p>Choose a building slot from the sidebar</p>
+          {hasAnyBuildings ? (
+            <>
+              <h2>Select a Building to Start Trading</h2>
+              <p>Choose a building slot from the sidebar</p>
+            </>
+          ) : (
+            <>
+              <h2>Buy Your First Building</h2>
+              <p>Purchase a building from the shop to start earning tokens</p>
+            </>
+          )}
         </div>
       </div>
     );

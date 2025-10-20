@@ -78,6 +78,33 @@ export function BuildingShop({ townLevel, buildings, balances, onPurchase }: Bui
         </div>
       </div>
 
+      {/* Building Purchase Section */}
+      <div className="purchase-section">
+        <div className="building-card">
+          <div className="building-icon">🏢</div>
+          <div className="building-details">
+            <span className="building-name">Buy Building</span>
+            <span className="building-price">${BUILDING_COST_USDC} USDC</span>
+          </div>
+        </div>
+
+        <button
+          onClick={handlePurchaseBuilding}
+          disabled={isLoadingBuilding || !canAffordBuilding || !hasSlotAvailable}
+          className="buy-building-button"
+        >
+          {!hasSlotAvailable
+            ? canUpgradeTown
+              ? `Upgrade town to unlock more slots`
+              : `Max slots reached (${maxSlots}/${maxSlots})`
+            : !canAffordBuilding
+            ? 'Insufficient USDC'
+            : isLoadingBuilding
+            ? 'Buying...'
+            : `Buy Building ($${BUILDING_COST_USDC})`}
+        </button>
+      </div>
+
       {/* Town Upgrade Section */}
       {canUpgradeTown && (
         <div className="purchase-section">
@@ -107,32 +134,7 @@ export function BuildingShop({ townLevel, buildings, balances, onPurchase }: Bui
         </div>
       )}
 
-      {/* Building Purchase Section */}
-      <div className="purchase-section">
-        <div className="building-card">
-          <div className="building-icon">🏢</div>
-          <div className="building-details">
-            <span className="building-name">New Building Slot</span>
-            <span className="building-price">${BUILDING_COST_USDC} USDC</span>
-          </div>
-        </div>
-
-        <button
-          onClick={handlePurchaseBuilding}
-          disabled={isLoadingBuilding || !canAffordBuilding || !hasSlotAvailable}
-          className="buy-building-button"
-        >
-          {!hasSlotAvailable
-            ? canUpgradeTown
-              ? `Upgrade town to unlock more slots`
-              : `Max slots reached (${maxSlots}/${maxSlots})`
-            : !canAffordBuilding
-            ? 'Insufficient USDC'
-            : isLoadingBuilding
-            ? 'Buying...'
-            : `Buy Building ($${BUILDING_COST_USDC})`}
-        </button>
-      </div>
+      
     </div>
   );
 }

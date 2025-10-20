@@ -100,6 +100,7 @@ export class CharacterDungeonRepo {
 
   /**
    * Find unclaimed character dungeons for a character
+   * Limited to the 20 most recent to prevent performance issues
    */
   async findUnclaimedByCharacterId(characterId: CharacterId) {
     const { data, error } = await supabaseClient
@@ -108,7 +109,8 @@ export class CharacterDungeonRepo {
       .eq("character_id", characterId)
       .not("finished_at", "is", null)
       .is("claimed_at", null)
-      .order("finished_at", { ascending: false });
+      .order("finished_at", { ascending: false })
+      .limit(20);
 
     if (error) throw error;
     return data;

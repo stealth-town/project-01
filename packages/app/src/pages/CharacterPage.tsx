@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiClient } from '../api/client';
 import { Layout } from '../components/Layout';
+import { NavigationArrow } from '../components/NavigationArrow';
 import type { UserBalances } from '@stealth-town/shared/types';
 
 interface Character {
@@ -267,15 +268,16 @@ export function CharacterPage() {
 
   return (
     <Layout>
-      <div style={{
-        width: '80%',
-        margin: '0 auto',
-        display: 'flex',
-        gap: '2rem',
-        padding: '2rem 0',
-        height: '100%',
-        overflow: 'hidden',
-      }}>
+      <div className="page-with-nav-arrow">
+        <div style={{
+          width: '80%',
+          margin: '0 auto',
+          display: 'flex',
+          gap: '2rem',
+          padding: '2rem 0',
+          height: '100%',
+          overflow: 'hidden',
+        }}>
         {/* Left Column - Character */}
         <div style={{
           flex: 2,
@@ -576,6 +578,10 @@ export function CharacterPage() {
             </div>
           </div>
         </div>
+        </div>
+
+        {/* Navigation Arrow */}
+        <NavigationArrow to="/dungeon" label="Claim your $USDC rewards" />
       </div>
 
       {/* Equip Modal */}

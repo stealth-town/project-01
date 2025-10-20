@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiClient } from '../api/client';
 import { Layout } from '../components/Layout';
+import { NavigationArrow } from '../components/NavigationArrow';
 import { supabaseClient } from '@stealth-town/shared/supabase';
 
 interface DungeonEvent {
@@ -295,15 +296,16 @@ export function DungeonPage() {
 
   return (
     <Layout>
-      <div style={{
-        display: 'flex',
-        height: '100%', // Layout component handles navigation height
-        overflow: 'hidden', // No page scrolling
-        padding: '0.75rem',
-        gap: '0.75rem',
-        width: '80%',
-        margin: '0 auto',
-      }}>
+      <div className="page-with-nav-arrow">
+        <div style={{
+          display: 'flex',
+          height: '100%', // Layout component handles navigation height
+          overflow: 'hidden', // No page scrolling
+          padding: '0.75rem',
+          gap: '0.75rem',
+          width: '80%',
+          margin: '0 auto',
+        }}>
         {/* Main Column - Left (Dungeon Timer, Active Dungeon, Combat Log, Claim Button) */}
         <div style={{
           flex: 2,
@@ -563,6 +565,10 @@ export function DungeonPage() {
             )}
           </div>
         </div>
+        </div>
+
+        {/* Navigation Arrow */}
+        <NavigationArrow to="/town" label="Trade and earn $Token" />
       </div>
 
       {/* Media Query for Responsive Layout */}

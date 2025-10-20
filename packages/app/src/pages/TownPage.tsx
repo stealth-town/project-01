@@ -10,6 +10,7 @@ import { BuildingShop } from '../components/BuildingShop';
 import { BuildingSidebar } from '../components/BuildingSidebar';
 import { TradingMainContent } from '../components/TradingMainContent';
 import { Layout } from '../components/Layout';
+import { NavigationArrow } from '../components/NavigationArrow';
 // styles in main.scss
 
 export function TownPage() {
@@ -127,40 +128,46 @@ export function TownPage() {
 
   return (
     <Layout>
-      <div className="town-page">
-        {/* Main Content */}
-        <div className="town-content">
-        {/* Left Side - Shops */}
-        <aside className="shops-panel">
-          <BalancesDisplay balances={balances} />
-          <EnergyShop balances={balances} onPurchase={loadTownState} />
-          <BuildingShop
-            townLevel={townLevel}
-            buildings={buildings}
-            balances={balances}
-            onPurchase={loadTownState}
-          />
-        </aside>
-
-        {/* Right Side - Buildings/Trading */}
-        <main className="trading-panel">
-          <div className="trading-layout">
-            <BuildingSidebar
+      <div className="page-with-nav-arrow town-background">
+        <div className="town-page">
+          {/* Main Content */}
+          <div className="town-content">
+          {/* Left Side - Shops */}
+          <aside className="shops-panel">
+            <BalancesDisplay balances={balances} />
+            <EnergyShop balances={balances} onPurchase={loadTownState} />
+            <BuildingShop
+              townLevel={townLevel}
               buildings={buildings}
-              maxSlots={maxSlots}
-              selectedBuildingId={selectedBuildingId}
-              onSelectBuilding={setSelectedBuildingId}
-            />
-
-            <TradingMainContent
-              selectedBuilding={selectedBuilding}
               balances={balances}
-              onUpdate={loadTownState}
+              onPurchase={loadTownState}
             />
-          </div>
-        </main>
+          </aside>
+
+          {/* Right Side - Buildings/Trading */}
+          <main className="trading-panel">
+            <div className="trading-layout">
+              <BuildingSidebar
+                buildings={buildings}
+                maxSlots={maxSlots}
+                selectedBuildingId={selectedBuildingId}
+                onSelectBuilding={setSelectedBuildingId}
+              />
+
+              <TradingMainContent
+                selectedBuilding={selectedBuilding}
+                balances={balances}
+                onUpdate={loadTownState}
+                hasAnyBuildings={buildings.length > 0}
+              />
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
+
+        {/* Navigation Arrow */}
+        <NavigationArrow to="/character" label="Upgrade your Character" />
+      </div>
     </Layout>
   );
 }
